@@ -1,0 +1,18 @@
+# קבצים שנוצרו על ידי Visual Studio
+*.suo
+*.user
+*.csproj.user
+bin/
+obj/
+appsettings.json
+# קבצים שנוצרו על ידי NuGet
+packages/
+
+# קבצים שנוצרו על ידי Node.js
+node_modules/
+
+# קבצי יומן
+*.log
+
+# קבצי תצורה מקומיים
+appsettings.Development.json
