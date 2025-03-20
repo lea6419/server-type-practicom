@@ -20,7 +20,7 @@ namespace WebApplication1.Controllers
             var file = await _fileService.GetFileByIdAsync(fileId);
             if (file == null) return NotFound();
 
-            file.Status = FileStatus.InProgress;
+            file.Status = "InProgress";
             await _fileService.UpdateFileAsync(file);
 
             return Ok(new { message = "File is now in progress" });
@@ -33,7 +33,7 @@ namespace WebApplication1.Controllers
 
             // עדכון הקובץ עם הגרסה החדשה
             file.FilePath = newFilePath;
-            file.Status = FileStatus.Completed;
+            file.Status ="Completed";
             file.UpdatedAt = DateTime.UtcNow;
 
             await _fileService.UpdateFileAsync(file);

@@ -10,7 +10,7 @@ using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://*:80");
+//builder.WebHost.UseUrls("http://*:80");
 
 builder.Logging.AddConsole();
 
@@ -20,7 +20,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File("logs/myapp.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
-builder.Host.UseSerilog();
+//builder.Host.UseSerilog();
 
 
 builder.Services.AddCors(options =>
