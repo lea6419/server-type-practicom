@@ -70,7 +70,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddAWSService<IAmazonS3>();
 // רישום השירות של S3
 IServiceCollection serviceCollection = builder.Services.AddScoped<Is3Service, S3Service>();
-
 // Add services to the container.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
@@ -85,7 +84,7 @@ builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<ISpeechToTextService, SpeechToTextService>();
 
 builder.Services.AddScoped<AuthService>();
-;
+builder.Services.AddScoped<ILogger<UserService>, Logger<UserService>>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
