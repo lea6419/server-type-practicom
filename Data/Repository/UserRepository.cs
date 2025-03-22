@@ -16,10 +16,10 @@ public class UserRepository : Repository<User>, IUserRepository
     public async Task<User> LoginAsync(string email, string password)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user == null || user.Password != password)
-            return null; // סיסמה צריכה להיות מוצפנת, כאן זה רק דוגמא בסיסית
+        if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
+            return null;
 
-        return user; // יש להחליף ביצירת JWT אמיתי
+        return user;
     }
     public async Task<IEnumerable<User>> GetAllAsync(Expression<Func<User, bool>> predicate)
     {
