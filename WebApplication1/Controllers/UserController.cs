@@ -143,13 +143,14 @@ public class UserController : ControllerBase
         }
     }
     [HttpGet("client")]
-    [Authorize] // רק משתמשים מחוברים יכולים לגשת לפרופיל
+    [Authorize(Policy = "TypeistOnly")]
+
     public async Task<IActionResult> GetUsers()
     {
             _logger.LogInformation("Getting users.");
         try
         {
-            var user = await _userService.GetAllUsersAsync();
+            var user = await _userService.GetClientAsync();
             if (user == null)
             {
                 return NotFound();
