@@ -16,34 +16,7 @@ public class UserController : ControllerBase
         _authService = authService;
         _logger = logger;
     }
-    // רישום משתמש חדש
-    //[HttpPost("register")]
-    //[Authorize(Policy = "TypeistOnly")]
-    //public async Task<IActionResult> RegisterUser([FromBody] UserDto userDto)
-    //{
-    //    var user = new User
-    //    {
-    //        Username = userDto.FullName,
-    //        Email = userDto.Email,
-    //        Role = userDto.Role,
-    //        Password=userDto.Password,
-    //    };
-
-    //    var result = await _userService.CreateUserAsync(user);
-    //    return Ok(result);
-    //}
-
-    //// התחברות משתמש
-    //[HttpPost("login")]
-    //public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-    //{
-    //    var token = await _userService.LoginAsync(loginDto.Email, loginDto.Password);
-    //    if (token == null)
-    //        return Unauthorized("Invalid credentials");
-
-    //    return Ok(new { Token = token });
-    //}
-
+    
     // רישום משתמש חדש
     [HttpPost("register")]
 
@@ -169,59 +142,81 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "Error deleting user." });
         }
     }
-    [HttpGet("profile")]
+    [HttpGet("client")]
     [Authorize] // רק משתמשים מחוברים יכולים לגשת לפרופיל
-    public async Task<IActionResult> GetUserProfile()
+    public async Task<IActionResult> GetUsers()
     {
-        _logger.LogInformation("Getting user profile.");
-
+            _logger.LogInformation("Getting users.");
         try
         {
-            var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-            if (string.IsNullOrEmpty(token))
-            {
-                return Unauthorized();
-            }
-
-            var user = await _userService.GetUserByTokenAsync(token);
+            var user = await _userService.GetAllUsersAsync();
             if (user == null)
             {
                 return NotFound();
             }
-
-            // החזרת פרטי משתמש (ללא סיסמה)
-            return Ok(new
-            {
-                user.Id,
-                user.Username,
-                user.Email,
-                user.Role,
-                user.TypeistId
-            });
+            return Ok(user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting user profile.");
-            return BadRequest(new { message = "Error getting user profile." });
+            _logger.LogError(ex, "Error getting get client user.");
+            return BadRequest(new { message = "Error getting user client." });
         }
+       
     }
-    [HttpGet("typeist/{typeistId}/clients")]
-    [Authorize(Policy = "TypeistOnly")] // רק קלדניות יכולות לקבל רשימה זו
-    public async Task<IActionResult> GetClientsByTypeist(int typeistId)
-    {
-        _logger.LogInformation($"Getting clients for typeist ID: {typeistId}");
 
-        try
-        {
-            var users = await _userService.GetUsersByTypeistAsync(typeistId);
-            var clients = users.Where(u => u.Role == "Client"); // סינון לקוחות בלבד
-            return Ok(clients);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error getting clients for typeist ID: {typeistId}");
-            return BadRequest(new { message = $"Error getting clients for typeist ID: {typeistId}" });
-        }
-    }
+    //[HttpGet("profile")]
+    //[Authorize] // רק משתמשים מחוברים יכולים לגשת לפרופיל
+    //public async Task<IActionResult> GetUserProfile()
+    //{
+    //    _logger.LogInformation("Getting user profile.");
+
+    //    try
+    //    {
+    //        var token = HttpContext.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+    //        if (string.IsNullOrEmpty(token))
+    //        {
+    //            return Unauthorized();
+    //        }
+
+    //        var user = await _userService.GetUserByTokenAsync(token);
+    //        if (user == null)
+    //        {
+    //            return NotFound();
+    //        }
+
+    //        // החזרת פרטי משתמש (ללא סיסמה)
+    //        return Ok(new
+    //        {
+    //            user.Id,
+    //            user.Username,
+    //            user.Email,
+    //            user.Role,
+    //            user.TypeistId
+    //        });
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, "Error getting user profile.");
+    //        return BadRequest(new { message = "Error getting user profile." });
+    //    }
+    //}
+    //[HttpGet("typeist/{typeistId}/clients")]
+    //[Authorize(Policy = "TypeistOnly")] // רק קלדניות יכולות לקבל רשימה זו
+    //public async Task<IActionResult> GetClientsByTypeist(int typeistId)
+    //{
+    //    _logger.LogInformation($"Getting clients for typeist ID: {typeistId}");
+
+    //    try
+    //    {
+    //        var users = await _userService.GetUsersByTypeistAsync(typeistId);
+    //        var clients = users.Where(u => u.Role == "Client"); // סינון לקוחות בלבד
+    //        return Ok(clients);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        _logger.LogError(ex, $"Error getting clients for typeist ID: {typeistId}");
+    //        return BadRequest(new { message = $"Error getting clients for typeist ID: {typeistId}" });
+    //    }
+    //}
 
 }

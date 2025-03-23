@@ -160,16 +160,17 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<IEnumerable<User>> GetUsersByTypeistAsync(int typeistId)
+    public async Task<IEnumerable<User>> GetClientAsync()
     {
         try
         {
-            return await _userRepository.GetAllAsync(u => u.TypeistId == typeistId);
+            return await _userRepository.GetAllAsync(u => u.Role == "client");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error retrieving users for typeist {typeistId}.");
+            _logger.LogError(ex, $"Error retrieving users for typeist .");
             throw;
         }
     }
 }
+
