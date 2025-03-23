@@ -40,7 +40,16 @@ namespace WebApplication1.Controllers
 
             return Ok(new { message = "File has been updated and marked as completed" });
         }
+        [HttpGet("user-files/{userId}")]
+        public async Task<IActionResult> GetUserFiles(int userId)
+        {
+            var files = await _fileService.GetFilesByUserIdAsync(userId);
+            if (files == null || !files.Any()) return NotFound(new { message = "No files found for this user." });
 
+            // מיון הקבצים לפי תאריך יצירה
+            var sortedFiles = files.OrderBy(f => f.CreatedAt).ToList();
+            return Ok(sortedFiles);
+        }
         [HttpDelete("{fileId}")]
         public async Task<IActionResult> SoftDeleteFile(int fileId)
         {
