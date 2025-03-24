@@ -5,7 +5,7 @@ public class UserFile:IEntity
 {
     public int Id { get; set; }
     public int UserId { get; set; }  // מפתח זר (המשתמש                 // שהעלה את הקובץ)
-    public string Status { get; set; }  // 
+    public int Status { get; set; }  // 
     public string FileName { get; set; }  // שם הקובץ
     public string FilePath { get; set; }  // נתיב לקובץ (שמור ב-S3)
     public string FileType { get; set; }  // סוג הקובץ (PDF, DOCX וכו')

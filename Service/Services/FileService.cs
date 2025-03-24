@@ -47,7 +47,7 @@ public class FileService : IFileService
         var userFile = new UserFile
         {
             UserId = userId,
-            Status = "Pending", // סטטוס בהמתנה
+            Status = 2, // סטטוס בהמתנה
             FileName = file.FileName,
             FilePath = filePath,
             FileType = file.ContentType,
