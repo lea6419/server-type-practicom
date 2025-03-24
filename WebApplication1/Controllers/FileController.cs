@@ -86,7 +86,7 @@ namespace WebApplication1.Controllers
             return Ok(new { message = "File soft deleted successfully", file = deletedFile });
         }
         [HttpPost("upload")]
-        [Authorize(Policy = "ClientOrTypeist")]
+        [Authorize]
         public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromForm] DateTime deadline)
         {
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
