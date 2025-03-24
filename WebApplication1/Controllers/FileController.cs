@@ -28,7 +28,7 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
-            file.Status = "InProgress";
+            file.Status = 0;
             await _fileService.UpdateFileAsync(file);
             _logger.LogInformation("File ID: {FileId} status updated to InProgress", fileId);
 
@@ -47,7 +47,7 @@ namespace WebApplication1.Controllers
             }
 
             file.FilePath = newFilePath;
-            file.Status = "Completed";
+            file.Status = 3;
             file.UpdatedAt = DateTime.UtcNow;
 
             await _fileService.UpdateFileAsync(file);
