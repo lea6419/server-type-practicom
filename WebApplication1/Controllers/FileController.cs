@@ -60,7 +60,7 @@ namespace WebApplication1.Controllers
             }
             return Ok(new { message = "File soft deleted successfully", file = deletedFile });
         }
-        [Authorize(Policy = "ClientOnly")] // רק משתמשים עם role="client" יכולים להעלות קובץ
+       // [Authorize(Policy = "ClientOnly")] // רק משתמשים עם role="client" יכולים להעלות קובץ
         [HttpPost("upload")]
         public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromForm] DateTime deadline)
         {
