@@ -9,12 +9,15 @@ namespace WebApplication1.Controllers
     public class FileController : Controller
     {
         private readonly IFileService _fileService;
+        private readonly AuthService authService;
+
         private readonly ILogger<FileController> _logger;
 
-        public FileController(IFileService fileService, ILogger<FileController> logger)
+        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService)
         {
             _fileService = fileService;
             _logger = logger;
+            this.authService = authService;
         }
 
         [HttpPost("start-typing/{fileId}")]
@@ -97,7 +100,7 @@ namespace WebApplication1.Controllers
             }
 
             // הסרת קטע הקוד שאחראי על אימות המשתמש
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+             var userIdClaim = User.FindFirst("id");
             if (userIdClaim == null)
             {
                 _logger.LogWarning("Unauthorized user attempt to upload file.");
