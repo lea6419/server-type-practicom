@@ -86,6 +86,7 @@ namespace WebApplication1.Controllers
             return Ok(new { message = "File soft deleted successfully", file = deletedFile });
         }
         [HttpPost("upload")]
+        [Authorize(Policy = "ClientOrTypeist")]
         public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromForm] DateTime deadline)
         {
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
@@ -96,22 +97,21 @@ namespace WebApplication1.Controllers
             }
 
             // הסרת קטע הקוד שאחראי על אימות המשתמש
-            // var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            // if (userIdClaim == null)
-            // {
-            //     _logger.LogWarning("Unauthorized user attempt to upload file.");
-            //     return Unauthorized(new { message = "User not authorized" });
-            // }
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                _logger.LogWarning("Unauthorized user attempt to upload file.");
+                return Unauthorized(new { message = "User not authorized" });
+            }
 
-            // if (!int.TryParse(userIdClaim.Value, out int userId))
-            // {
-            //     _logger.LogWarning("Invalid user ID retrieved from claims.");
-            //     return Unauthorized(new { message = "Invalid user ID" });
-            // }
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                _logger.LogWarning("Invalid user ID retrieved from claims.");
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
 
             // כאן, ניתן לקבוע userId לערך ברירת מחדל או לשנות את הלוגיקה שלך בהתאם
-            int userId = 1; // לדוגמה, אם אתה רוצה לקבוע ערך קבוע
-
+            
             var userFile = await _fileService.UploadFileAsync(file, deadline, userId);
             _logger.LogInformation("File uploaded successfully for user ID: {UserId}", userId);
 
