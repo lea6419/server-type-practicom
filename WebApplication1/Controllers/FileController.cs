@@ -120,20 +120,6 @@ namespace WebApplication1.Controllers
 
             return Ok(new { message = "File uploaded successfully", file = userFile });
         }
-        [HttpGet("files/{fileId}")]
-        public async Task<IActionResult> GetFile(int fileId)
-        {
-            _logger.LogInformation("Retrieving file with ID: {FileId}", fileId);
-            var file = await _fileService.GetFileByIdAsync(fileId);
-            if (file == null)
-            {
-                _logger.LogWarning("File not found for ID: {FileId}", fileId);
-                return NotFound(new { message = "File not found" });
-            }
-
-            var fileStream = new FileStream(file.FilePath, FileMode.Open, FileAccess.Read);
-            return File(fileStream, "application/octet-stream", file.FileName);
-        }
 
     }
 }

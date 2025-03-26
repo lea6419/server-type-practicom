@@ -3,14 +3,17 @@ using Amazon.S3.Transfer;
 using Amazon.S3;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 public class S3Service : Is3Service
 {
     private readonly IAmazonS3 _s3Client;
     private readonly string _bucketName;
+    private readonly ILogger<S3Service> _logger;
 
-    public S3Service(IConfiguration configuration)
+    public S3Service(IConfiguration configuration, ILogger<S3Service> logger)
     {
+        _logger = logger;
         var awsOptions = configuration.GetSection("AWS");
         var accessKey = awsOptions["AccessKey"];
         var secretKey = awsOptions["SecretKey"];
@@ -18,65 +21,106 @@ public class S3Service : Is3Service
         _bucketName = awsOptions["BucketName"];
 
         _s3Client = new AmazonS3Client(accessKey, secretKey, Amazon.RegionEndpoint.GetBySystemName(region));
+        _logger.LogInformation("S3Service initialized with bucket: {BucketName}", _bucketName);
     }
 
-    
     public async Task<string> GetDownloadUrlAsync(string fileName)
     {
-        var request = new GetPreSignedUrlRequest
+        _logger.LogInformation("Generating download URL for file: {FileName}", fileName);
+        try
         {
-            BucketName = _bucketName,
-            Key = fileName,
-            Verb = HttpVerb.GET,
-            Expires = DateTime.UtcNow.AddMinutes(30) // תוקף של 30 דקות
-        };
-        return _s3Client.GetPreSignedURL(request);
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = _bucketName,
+                Key = fileName,
+                Verb = HttpVerb.GET,
+                Expires = DateTime.UtcNow.AddMinutes(30)
+            };
+
+            var url = _s3Client.GetPreSignedURL(request);
+            _logger.LogInformation("Generated URL: {Url}", url);
+            return url;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating download URL for file: {FileName}", fileName);
+            throw;
+        }
     }
 
     public async Task<string> UploadFileAsync(IFormFile file, string fileName)
     {
+        _logger.LogInformation("Uploading file: {FileName}", fileName);
         var transferUtility = new TransferUtility(_s3Client);
 
-        // העלאת הקובץ לסרוויס S3
-        using (var stream = file.OpenReadStream())
+        try
         {
-            var uploadRequest = new TransferUtilityUploadRequest
+            using (var stream = file.OpenReadStream())
+            {
+                var uploadRequest = new TransferUtilityUploadRequest
+                {
+                    BucketName = _bucketName,
+                    Key = fileName,
+                    InputStream = stream,
+                    ContentType = file.ContentType
+                };
+
+                await transferUtility.UploadAsync(uploadRequest);
+                _logger.LogInformation("File uploaded successfully: {FileName}", fileName);
+            }
+
+            return await GetDownloadUrlAsync(fileName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading file: {FileName}", fileName);
+            throw;
+        }
+    }
+
+    public async Task DeleteFileAsync(string fileKey)
+    {
+        _logger.LogInformation("Deleting file: {FileKey}", fileKey);
+        try
+        {
+            var deleteObjectRequest = new DeleteObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = fileKey
+            };
+
+            await _s3Client.DeleteObjectAsync(deleteObjectRequest);
+            _logger.LogInformation("File deleted successfully: {FileKey}", fileKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting file: {FileKey}", fileKey);
+            throw;
+        }
+    }
+
+    public async Task<string> GeneratePresignedUrlAsync(string fileName, string contentType)
+    {
+        _logger.LogInformation("Generating presigned URL for file: {FileName}", fileName);
+        try
+        {
+            var request = new GetPreSignedUrlRequest
             {
                 BucketName = _bucketName,
                 Key = fileName,
-                InputStream = stream,
-                ContentType = file.ContentType
+                Verb = HttpVerb.PUT,
+                Expires = DateTime.UtcNow.AddMinutes(10),
+                ContentType = contentType
             };
 
-            await transferUtility.UploadAsync(uploadRequest);
+            var url = _s3Client.GetPreSignedURL(request);
+            _logger.LogInformation("Generated presigned URL: {Url}", url);
+            return url;
         }
-
-        // החזרת ה-URL של הקובץ המועלה ב-S3
-        return await GetDownloadUrlAsync(fileName);
-    }
-    public async Task DeleteFileAsync(string fileKey)
-    {
-        var deleteObjectRequest = new DeleteObjectRequest
+        catch (Exception ex)
         {
-            BucketName = _bucketName,
-            Key = fileKey
-        };
-
-        await _s3Client.DeleteObjectAsync(deleteObjectRequest);
+            _logger.LogError(ex, "Error generating presigned URL for file: {FileName}", fileName);
+            throw;
+        }
     }
-    public async Task<string> GeneratePresignedUrlAsync(string fileName, string contentType)
-    {
-        var request = new GetPreSignedUrlRequest
-        {
-            BucketName = _bucketName,
-            Key = fileName,
-            Verb = HttpVerb.PUT,
-            Expires = DateTime.UtcNow.AddMinutes(10),
-            ContentType = contentType
-        };
-
-        return _s3Client.GetPreSignedURL(request);
-    }
-
-
 }

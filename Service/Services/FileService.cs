@@ -61,7 +61,7 @@ public class FileService : IFileService
         return await _fileRepository.AddAsync(userFile);
     }
 
-    
+
 
     public async Task<bool> DeleteFileAsync(int fileId)
     {
@@ -71,14 +71,24 @@ public class FileService : IFileService
             return false; // הקובץ לא נמצא
         }
 
-        // מחיקת הקובץ מ-S3
-        await _s3Service.DeleteFileAsync(file.FilePath);
+        // חילוץ ה-Key מתוך ה-URL של הקובץ
+        var fileKey = Path.GetFileName(new Uri(file.FilePath).LocalPath);
+
+        try
+        {
+            // מחיקת הקובץ מ-S3
+            await _s3Service.DeleteFileAsync(fileKey);
+        }
+        catch (Exception ex)
+        {
+            // ניתן להוסיף לוגים כאן כדי לדעת למה מחיקה נכשלה
+            Console.WriteLine($"שגיאה במחיקת קובץ מ-S3: {ex.Message}");
+            return false;
+        }
 
         // מחיקת הקובץ מהמסד נתונים
         await _fileRepository.DeleteAsync(fileId);
 
         return true; // מחיקה בוצעה בהצלחה
     }
-
-   
 }
