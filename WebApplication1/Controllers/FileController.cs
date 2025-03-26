@@ -28,9 +28,11 @@ namespace WebApplication1.Controllers
                 var downloadUrl = await _fileService.GetDownloadUrlAsync(fileId);
                 if (string.IsNullOrEmpty(downloadUrl))
                 {
+                    _logger.LogWarning("Download URL not found for fileId: {FileId}", fileId);
                     return NotFound("File not found");
                 }
 
+                _logger.LogInformation("Redirecting to download URL: {DownloadUrl}", downloadUrl);
                 return Redirect(downloadUrl);  // הפנייה ל-URL להורדה
             }
             catch (Exception ex)
@@ -39,6 +41,7 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPost("start-typing/{fileId}")]
         public async Task<IActionResult> StartTyping(int fileId)
         {
