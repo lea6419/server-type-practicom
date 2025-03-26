@@ -22,7 +22,6 @@ namespace WebApplication1.Controllers
             this.authService = authService;
         }
 
-        [HttpGet("downloadLocali/{fileId}")]
 
         [HttpGet("download/{fileId}")]
         public async Task<IActionResult> DownloadFileFromS3(int fileId)
