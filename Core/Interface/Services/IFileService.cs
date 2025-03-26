@@ -8,4 +8,5 @@ public interface IFileService
     Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId); // תיקון שם המתודה
     Task<UserFile?> SoftDeleteFileAsync(int fileId);
     Task<bool> DeleteFileAsync(int fileId);
+      Task<string> GetDownloadUrlAsync(int fileId);
 }

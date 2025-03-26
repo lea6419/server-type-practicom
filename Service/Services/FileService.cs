@@ -1,17 +1,18 @@
-﻿
-
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 public class FileService : IFileService
 {
     private readonly IFileRepository _fileRepository;
+    private readonly Is3Service _s3Service;
 
-    public readonly Is3Service _s3Service;
-
-    public FileService(IFileRepository fileRepository, Is3Service is3Service)
+    public FileService(IFileRepository fileRepository, Is3Service s3Service)
     {
         _fileRepository = fileRepository;
-        _s3Service = is3Service;
+        _s3Service = s3Service;
     }
 
     public async Task<IEnumerable<UserFile>> GetFilesByUserIdAsync(int userId)
@@ -23,7 +24,6 @@ public class FileService : IFileService
     {
         return await _fileRepository.GetByIdAsync(fileId);
     }
-
 
     public async Task<UserFile> UpdateFileAsync(UserFile file)
     {
@@ -61,8 +61,6 @@ public class FileService : IFileService
         return await _fileRepository.AddAsync(userFile);
     }
 
-
-
     public async Task<bool> DeleteFileAsync(int fileId)
     {
         var file = await _fileRepository.GetByIdAsync(fileId);
@@ -90,5 +88,19 @@ public class FileService : IFileService
         await _fileRepository.DeleteAsync(fileId);
 
         return true; // מחיקה בוצעה בהצלחה
+    }
+    public async Task<string> GetDownloadUrlAsync(int fileId)
+    {
+        var userFile = await _fileRepository.GetByIdAsync(fileId);
+        if (userFile == null)
+        {
+            throw new ArgumentException("File not found.");
+        }
+
+        // כעת תוכל להשתמש ב-userFile.FilePath או ב-userFile.FileName
+        var fileName = userFile.FileName;
+
+        // קבל URL חתום מ-S3
+        return await _s3Service.GetDownloadUrlAsync(fileName);
     }
 }

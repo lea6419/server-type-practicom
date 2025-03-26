@@ -19,7 +19,26 @@ namespace WebApplication1.Controllers
             _logger = logger;
             this.authService = authService;
         }
+        [HttpGet("download/{fileId}")]
+        public async Task<IActionResult> DownloadFile(int fileId)
+        {
+            try
+            {
+                // קריאה לשירות הקבצים להורדת ה-URL
+                var downloadUrl = await _fileService.GetDownloadUrlAsync(fileId);
+                if (string.IsNullOrEmpty(downloadUrl))
+                {
+                    return NotFound("File not found");
+                }
 
+                return Redirect(downloadUrl);  // הפנייה ל-URL להורדה
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file with ID: {FileId}", fileId);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
         [HttpPost("start-typing/{fileId}")]
         public async Task<IActionResult> StartTyping(int fileId)
         {
@@ -37,7 +56,6 @@ namespace WebApplication1.Controllers
 
             return Ok(new { message = "File is now in progress" });
         }
-
         [HttpPost("complete-typing/{fileId}")]
         public async Task<IActionResult> CompleteTyping(int fileId, [FromBody] string newFilePath)
         {
@@ -49,8 +67,9 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
+            // עדכון נתיב הקובץ
             file.FilePath = newFilePath;
-            file.Status = 3;
+            file.Status = 3; // סטטוס הושלמה
             file.UpdatedAt = DateTime.UtcNow;
 
             await _fileService.UpdateFileAsync(file);
@@ -58,6 +77,7 @@ namespace WebApplication1.Controllers
 
             return Ok(new { message = "File has been updated and marked as completed" });
         }
+
 
         [HttpGet("user-files/{userId}")]
         public async Task<IActionResult> GetUserFiles(int userId)

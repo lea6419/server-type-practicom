@@ -1,9 +1,12 @@
-﻿using Amazon.S3.Model;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using Amazon.S3;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 public class S3Service : Is3Service
 {
@@ -97,8 +100,8 @@ public class S3Service : Is3Service
             _logger.LogError(ex, "Error deleting file: {FileKey}", fileKey);
             throw;
         }
-    }
 
+    }
     public async Task<string> GeneratePresignedUrlAsync(string fileName, string contentType)
     {
         _logger.LogInformation("Generating presigned URL for file: {FileName}", fileName);
@@ -108,9 +111,9 @@ public class S3Service : Is3Service
             {
                 BucketName = _bucketName,
                 Key = fileName,
-                Verb = HttpVerb.PUT,
-                Expires = DateTime.UtcNow.AddMinutes(10),
-                ContentType = contentType
+                Verb = HttpVerb.PUT, // PUT כדי לאפשר העלאת קובץ
+                Expires = DateTime.UtcNow.AddMinutes(10), // תוקף ה-URL
+                ContentType = contentType // סוג התוכן
             };
 
             var url = _s3Client.GetPreSignedURL(request);
@@ -123,4 +126,5 @@ public class S3Service : Is3Service
             throw;
         }
     }
+
 }
