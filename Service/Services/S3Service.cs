@@ -127,4 +127,28 @@ public class S3Service : Is3Service
         }
     }
 
+    public async Task<Stream> GetFileStreamAsync(string fileName)
+    {
+        try
+        {
+            // תחילת קוד לזיהוי שם הקובץ. במציאות תוכל לאחזר את שם הקובץ מתוך DB או פרמטר אחר
+            var fileKey = $"your-file-key/{fileName}.pdf"; // שם הקובץ ב-S3 (או מקש כמו ID שמפנה לקובץ)
+
+            // הורדת הקובץ מ-S3
+            var getObjectResponse = await _s3Client.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = fileKey
+            });
+
+            return getObjectResponse.ResponseStream;
+        }
+        catch (Exception ex)
+        {
+            // טיפול בשגיאות במקרה של בעיה בהורדת הקובץ
+            throw new Exception($"Error retrieving file with ID {fileName} from S3", ex);
+        }
+    }
+}
+
 }

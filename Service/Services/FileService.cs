@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 public class FileService : IFileService
 {
@@ -102,5 +103,19 @@ public class FileService : IFileService
 
         // קבל URL חתום מ-S3
         return await _s3Service.GetDownloadUrlAsync(fileName);
+    }
+  public async  Task<Stream> GetFileStreamAsync(int fileId)
+    {
+        var userFile = await _fileRepository.GetByIdAsync(fileId);
+        if (userFile == null)
+        {
+            throw new ArgumentException("File not found.");
+        }
+
+        // כעת תוכל להשתמש ב-userFile.FilePath או ב-userFile.FileName
+        var fileName = userFile.FileName;
+
+        // קבל URL חתום מ-S3
+        return await _s3Service.GetFileStreamAsync(fileName);
     }
 }

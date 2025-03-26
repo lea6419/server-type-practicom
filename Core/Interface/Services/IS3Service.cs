@@ -11,6 +11,6 @@ public interface  Is3Service
     public  Task DeleteFileAsync(string fileKey);
 
     public Task<string> GeneratePresignedUrlAsync(string fileName, string contentType);
-
+    Task<Stream> GetFileStreamAsync(string fileName);
     }
 

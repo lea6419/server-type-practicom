@@ -9,4 +9,5 @@ public interface IFileService
     Task<UserFile?> SoftDeleteFileAsync(int fileId);
     Task<bool> DeleteFileAsync(int fileId);
       Task<string> GetDownloadUrlAsync(int fileId);
+    Task<Stream> GetFileStreamAsync(int fileId);
 }

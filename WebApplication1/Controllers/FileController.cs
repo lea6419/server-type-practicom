@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.Extensions.Logging;
+using Amazon.S3.Model;
+using Amazon.S3;
 
 namespace WebApplication1.Controllers
 {
@@ -19,7 +21,36 @@ namespace WebApplication1.Controllers
             _logger = logger;
             this.authService = authService;
         }
+
+        [HttpGet("downloadLocali/{fileId}")]
+
         [HttpGet("download/{fileId}")]
+        public async Task<IActionResult> DownloadFileFromS3(int fileId)
+        {
+            try
+            {
+                // קריאה לשירות הקבצים לקבלת ה-Stream של הקובץ
+                var fileStream = await _fileService.GetFileStreamAsync(fileId);
+
+                if (fileStream == null)
+                {
+                    _logger.LogWarning("File not found for fileId: {FileId}", fileId);
+                    return NotFound("File not found in S3");
+                }
+
+
+                // החזרת הקובץ כתגובה
+                return File(fileStream,"","");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file with ID: {FileId}", fileId);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        [HttpGet("download/{fileId}")]
+
         public async Task<IActionResult> DownloadFile(int fileId)
         {
             try
