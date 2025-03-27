@@ -52,7 +52,7 @@ public class FileService : IFileService
             UserId = userId,
             Status = 2,
             FileName = file.FileName,
-            FilePath = filePath,
+            FilePath = fileName,
             FileType = file.ContentType,
             Size = (int)file.Length,
             Deadline = deadline,
