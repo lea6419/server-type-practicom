@@ -41,8 +41,11 @@ public class FileService : IFileService
 
     public async Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId)
     {
-        var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+
+        // העלאת הקובץ ל-S3 וקבלת ה-URL להורדה
         var filePath = await _s3Service.UploadFileAsync(file, fileName);
+
 
         var userFile = new UserFile
         {
@@ -93,7 +96,11 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        return await _s3Service.GetDownloadUrlAsync(userFile.FilePath);
+        // שימוש בשם הקובץ מהנתיב השמור
+        var fileName = Path.GetFileName(userFile.FilePath);
+
+        // יצירת URL חתום להורדה
+        return await _s3Service.GetDownloadUrlAsync(fileName);
     }
 
     public async Task<Stream> GetFileStreamAsync(int fileId)
@@ -104,6 +111,8 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        return await _s3Service.GetFileStreamAsync(userFile.FilePath);
+        var fileName = Path.GetFileName(userFile.FilePath);
+
+        return await _s3Service.GetFileStreamAsync(fileName);
     }
 }
