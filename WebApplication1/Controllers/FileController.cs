@@ -23,7 +23,7 @@ namespace WebApplication1.Controllers
         }
 
 
-        [HttpGet("download/{fileId}")]
+        [HttpGet("download/stream/{fileId}")]
         public async Task<IActionResult> DownloadFileFromS3(int fileId)
         {
             try
