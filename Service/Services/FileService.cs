@@ -111,7 +111,7 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        var fileName = Path.GetFileName(userFile.FileName);
+        var fileName = Path.GetFileName(userFile.FilePath);
 
         return await _s3Service.GetFileStreamAsync(fileName);
     }
