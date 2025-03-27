@@ -63,7 +63,7 @@ namespace WebApplication1.Controllers
                 }
 
                 _logger.LogInformation("Redirecting to download URL: {DownloadUrl}", downloadUrl);
-                return Redirect(downloadUrl);  // הפנייה ל-URL להורדה
+                return Ok(new { url = downloadUrl });
             }
             catch (Exception ex)
             {
