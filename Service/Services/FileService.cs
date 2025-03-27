@@ -72,7 +72,11 @@ public class FileService : IFileService
             return false;
         }
 
-        var fileKey = Path.GetFileName(new Uri(file.FilePath).LocalPath);
+        // שימוש בשם הקובץ מהנתיב השמור
+        var fileKey = file.FilePath;
+
+        // יצירת URL חתום להורדה
+
 
         try
         {
@@ -97,10 +101,10 @@ public class FileService : IFileService
         }
 
         // שימוש בשם הקובץ מהנתיב השמור
-        var fileName = Path.GetFileName(userFile.FilePath);
+        var filepath = userFile.FilePath;
 
         // יצירת URL חתום להורדה
-        return await _s3Service.GetDownloadUrlAsync(fileName);
+        return await _s3Service.GetDownloadUrlAsync(filepath);
     }
 
     public async Task<Stream> GetFileStreamAsync(int fileId)
@@ -111,8 +115,10 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        var fileName = Path.GetFileName(userFile.FilePath);
+        // שימוש בשם הקובץ מהנתיב השמור
+        var filepath = userFile.FilePath;
 
-        return await _s3Service.GetFileStreamAsync(fileName);
+        // יצירת URL חתום להורדה
+        return await _s3Service.GetFileStreamAsync(filepath);
     }
 }
