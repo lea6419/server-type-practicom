@@ -4,16 +4,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
+using Microsoft.Extensions.Logging;
 
 public class FileService : IFileService
 {
     private readonly IFileRepository _fileRepository;
     private readonly Is3Service _s3Service;
+    private readonly ILogger<FileService> _logger;
 
-    public FileService(IFileRepository fileRepository, Is3Service s3Service)
+    public FileService(IFileRepository fileRepository, Is3Service s3Service, ILogger<FileService> logger)
     {
         _fileRepository = fileRepository;
         _s3Service = s3Service;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<UserFile>> GetFilesByUserIdAsync(int userId)
@@ -38,17 +41,13 @@ public class FileService : IFileService
 
     public async Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId)
     {
-        // יצירת שם ייחודי לקובץ
         var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+        var filePath = await _s3Service.UploadFileAsync(file, fileName);
 
-        // העלאת הקובץ ל-S3 ושמירת הנתיב
-        var filePath = await _s3Service.UploadFileAsync(file, fileName); // קריאה לפונקציה החדשה להעלאת הקובץ
-
-        // יצירת אובייקט הקובץ
         var userFile = new UserFile
         {
             UserId = userId,
-            Status = 2, // סטטוס בהמתנה
+            Status = 2,
             FileName = file.FileName,
             FilePath = filePath,
             FileType = file.ContentType,
@@ -58,7 +57,6 @@ public class FileService : IFileService
             UpdatedAt = DateTime.UtcNow
         };
 
-        // שמירת הקובץ במסד הנתונים
         return await _fileRepository.AddAsync(userFile);
     }
 
@@ -67,29 +65,26 @@ public class FileService : IFileService
         var file = await _fileRepository.GetByIdAsync(fileId);
         if (file == null)
         {
-            return false; // הקובץ לא נמצא
+            _logger.LogWarning("File with ID {FileId} not found.", fileId);
+            return false;
         }
 
-        // חילוץ ה-Key מתוך ה-URL של הקובץ
         var fileKey = Path.GetFileName(new Uri(file.FilePath).LocalPath);
 
         try
         {
-            // מחיקת הקובץ מ-S3
             await _s3Service.DeleteFileAsync(fileKey);
+            await _fileRepository.DeleteAsync(fileId);
+            _logger.LogInformation("File {FileId} deleted successfully.", fileId);
+            return true;
         }
         catch (Exception ex)
         {
-            // ניתן להוסיף לוגים כאן כדי לדעת למה מחיקה נכשלה
-            Console.WriteLine($"שגיאה במחיקת קובץ מ-S3: {ex.Message}");
+            _logger.LogError(ex, "Error deleting file {FileId}", fileId);
             return false;
         }
-
-        // מחיקת הקובץ מהמסד נתונים
-        await _fileRepository.DeleteAsync(fileId);
-
-        return true; // מחיקה בוצעה בהצלחה
     }
+
     public async Task<string> GetDownloadUrlAsync(int fileId)
     {
         var userFile = await _fileRepository.GetByIdAsync(fileId);
@@ -98,13 +93,10 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        // כעת תוכל להשתמש ב-userFile.FilePath או ב-userFile.FileName
-        var fileName = userFile.FileName;
-
-        // קבל URL חתום מ-S3
-        return await _s3Service.GetDownloadUrlAsync(fileName);
+        return await _s3Service.GetDownloadUrlAsync(userFile.FilePath);
     }
-  public async  Task<Stream> GetFileStreamAsync(int fileId)
+
+    public async Task<Stream> GetFileStreamAsync(int fileId)
     {
         var userFile = await _fileRepository.GetByIdAsync(fileId);
         if (userFile == null)
@@ -112,10 +104,6 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        // כעת תוכל להשתמש ב-userFile.FilePath או ב-userFile.FileName
-        var fileName = userFile.FileName;
-
-        // קבל URL חתום מ-S3
-        return await _s3Service.GetFileStreamAsync(fileName);
+        return await _s3Service.GetFileStreamAsync(userFile.FilePath);
     }
 }
