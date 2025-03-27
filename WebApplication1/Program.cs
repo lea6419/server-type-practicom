@@ -136,6 +136,9 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+app.UseStaticFiles(); // הפעלת הגשת קבצים סטטיים
+
+app.MapControllers();
 
 app.MapControllers();
 
