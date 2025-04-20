@@ -31,6 +31,17 @@ public class FileService : IFileService
 
     public async Task<UserFile> UpdateFileAsync(UserFile file)
     {
+        var userFile = await _fileRepository.GetByIdAsync(file.Id);
+        if (userFile == null)
+        {
+            throw new ArgumentException("File not found.");
+        }
+        if (userFile.Id == 0)
+        {
+            _fileRepository.ChangeStatus(3, file.Id);
+        }
+        else _fileRepository.ChangeStatus(1, file.Id);
+
         return await _fileRepository.UpdateAsync(file);
     }
 
@@ -99,10 +110,14 @@ public class FileService : IFileService
         {
             throw new ArgumentException("File not found.");
         }
-
+        if(userFile.Id==0)
+        {
+            _fileRepository.ChangeStatus(2, fileId);
+        }
+        else _fileRepository.ChangeStatus(4, fileId);
         // שימוש בשם הקובץ מהנתיב השמור
         var filepath = userFile.FilePath;
-
+       
         // יצירת URL חתום להורדה
         return await _s3Service.GetDownloadUrlAsync(filepath);
     }
