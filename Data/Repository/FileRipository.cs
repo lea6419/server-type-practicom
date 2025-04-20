@@ -17,19 +17,16 @@ public class FileRepository : Repository<UserFile>, IFileRepository
         return await _context.Files.FirstOrDefaultAsync(f => f.Id == fileId);
     }
 
-    public async Task ChangeStatus(int status, int failId)
+    public async Task ChangeStatus(int status, int fileId)
     {
-        var file = await this.GetByIdAsync(failId);
-        if (file == null)
-        {
-            return;
-        }
-        else
-        {
-            file.Status = status;
-        }
+        var file = await GetByIdAsync(fileId);
+        if (file == null) return;
+
+        file.Status = status;
         _context.Files.Update(file);
+        await _context.SaveChangesAsync();
     }
+
     public async Task<UserFile> SoftDeleteFileAsync(int fileId)
     {
         var file = await _context.Files.FindAsync(fileId);
