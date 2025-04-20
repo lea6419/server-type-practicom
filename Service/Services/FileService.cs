@@ -1,9 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
 using Microsoft.Extensions.Logging;
 
 public class FileService : IFileService
@@ -11,12 +6,25 @@ public class FileService : IFileService
     private readonly IFileRepository _fileRepository;
     private readonly Is3Service _s3Service;
     private readonly ILogger<FileService> _logger;
+    private readonly IUserRepository _userRepository;
 
-    public FileService(IFileRepository fileRepository, Is3Service s3Service, ILogger<FileService> logger)
+    public enum FileStatus
+    {
+        UploadedByClient = 1,
+        WaitingForTyping = 2,
+        TypingInProgress = 3,
+        TypedAndUploaded = 4,
+        DownloadedByClient = 5,
+        UpdatedVersion = 6,
+        SoftDeleted = 99
+    }
+
+    public FileService(IFileRepository fileRepository, Is3Service s3Service, ILogger<FileService> logger, IUserRepository userRepository)
     {
         _fileRepository = fileRepository;
         _s3Service = s3Service;
         _logger = logger;
+        _userRepository = userRepository;
     }
 
     public async Task<IEnumerable<UserFile>> GetFilesByUserIdAsync(int userId)
@@ -31,37 +39,39 @@ public class FileService : IFileService
 
     public async Task<UserFile> UpdateFileAsync(UserFile file)
     {
-        var userFile = await _fileRepository.GetByIdAsync(file.Id);
-        if (userFile == null)
+        var user = await _userRepository.GetByIdAsync(file.UserId);
+        if (user == null)
         {
-            throw new ArgumentException("File not found.");
+            throw new ArgumentException("User not found.");
         }
-        if (userFile.Id == 0)
+
+        if (user.Role == "typist")
         {
-            _fileRepository.ChangeStatus(3, file.Id);
+            _fileRepository.ChangeStatus((int)FileStatus.TypingInProgress, file.Id);
         }
-        else _fileRepository.ChangeStatus(1, file.Id);
+        else
+        {
+            _fileRepository.ChangeStatus((int)FileStatus.UploadedByClient, file.Id);
+        }
 
         return await _fileRepository.UpdateAsync(file);
     }
 
     public async Task<UserFile?> SoftDeleteFileAsync(int fileId)
     {
-        return await _fileRepository.SoftDeleteFileAsync(fileId);
+        await _fileRepository.ChangeStatus((int)FileStatus.SoftDeleted, fileId);
+        return await _fileRepository.GetByIdAsync(fileId);
     }
 
     public async Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId)
     {
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-
-        // העלאת הקובץ ל-S3 וקבלת ה-URL להורדה
         var filePath = await _s3Service.UploadFileAsync(file, fileName);
-
 
         var userFile = new UserFile
         {
             UserId = userId,
-            Status = 2,
+            Status = (int)FileStatus.WaitingForTyping,
             FileName = file.FileName,
             FilePath = fileName,
             FileType = file.ContentType,
@@ -83,11 +93,7 @@ public class FileService : IFileService
             return false;
         }
 
-        // שימוש בשם הקובץ מהנתיב השמור
         var fileKey = file.FilePath;
-
-        // יצירת URL חתום להורדה
-
 
         try
         {
@@ -110,16 +116,24 @@ public class FileService : IFileService
         {
             throw new ArgumentException("File not found.");
         }
-        if(userFile.Id==0)
+
+        var user = await _userRepository.GetByIdAsync(userFile.UserId);
+        if (user == null)
         {
-            _fileRepository.ChangeStatus(2, fileId);
+            throw new ArgumentException("User not found.");
         }
-        else _fileRepository.ChangeStatus(4, fileId);
-        // שימוש בשם הקובץ מהנתיב השמור
-        var filepath = userFile.FilePath;
-       
-        // יצירת URL חתום להורדה
-        return await _s3Service.GetDownloadUrlAsync(filepath);
+
+        // שינוי סטטוס בהתאם למי שמבצע את ההורדה
+        if (user.Role == "typist")
+        {
+            _fileRepository.ChangeStatus((int)FileStatus.WaitingForTyping, fileId);
+        }
+        else if (user.Role == "client")
+        {
+            _fileRepository.ChangeStatus((int)FileStatus.DownloadedByClient, fileId);
+        }
+
+        return await _s3Service.GetDownloadUrlAsync(userFile.FilePath);
     }
 
     public async Task<Stream> GetFileStreamAsync(int fileId)
@@ -130,10 +144,6 @@ public class FileService : IFileService
             throw new ArgumentException("File not found.");
         }
 
-        // שימוש בשם הקובץ מהנתיב השמור
-        var filepath = userFile.FilePath;
-
-        // יצירת URL חתום להורדה
-        return await _s3Service.GetFileStreamAsync(filepath);
+        return await _s3Service.GetFileStreamAsync(userFile.FilePath);
     }
 }
