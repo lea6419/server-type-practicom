@@ -23,6 +23,12 @@ namespace WebApplication1.Controllers
             this.authService = authService;
         }
 
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetSystemStats()
+        {
+            var stats = await _fileService.GetSystemStatsAsync();
+            return Ok(stats);
+        }
 
         [HttpGet("download/stream/{fileId}")]
         public async Task<IActionResult> DownloadFileFromS3(int fileId)

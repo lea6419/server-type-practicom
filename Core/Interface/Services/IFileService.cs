@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Core.Models;
+using Microsoft.AspNetCore.Http;
 
 public interface IFileService
 {
@@ -10,4 +11,5 @@ public interface IFileService
     Task<bool> DeleteFileAsync(int fileId);
       Task<string> GetDownloadUrlAsync(int fileId);
     Task<Stream> GetFileStreamAsync(int fileId);
+    Task<SystemStatsDto> GetSystemStatsAsync();
 }

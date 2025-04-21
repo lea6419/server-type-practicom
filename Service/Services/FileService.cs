@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Core.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 public class FileService : IFileService
@@ -74,6 +75,22 @@ public class FileService : IFileService
         _logger.LogInformation("File {FileId} soft-deleted successfully.", fileId);
 
         return file;
+    }
+    public async Task<SystemStatsDto> GetSystemStatsAsync()
+    {
+        var users = await _userRepository.GetAllAsync();
+        var files = await _fileRepository.GetAllAsync();
+
+        return new SystemStatsDto
+        {
+            TotalUsers = users.Count(),
+            TypistsCount = users.Count(u => u.Role == "typist"),
+            ClientsCount = users.Count(u => u.Role == "client"),
+            TotalFiles = files.Count(),
+            FilesWaiting = files.Count(f => f.Status == (int)FileStatus.WaitingForTyping),
+            FilesInProgress = files.Count(f => f.Status == (int)FileStatus.TypingInProgress),
+            FilesCompleted = files.Count(f => f.Status == (int)FileStatus.TypedAndUploaded)
+        };
     }
 
 
