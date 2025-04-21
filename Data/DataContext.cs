@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Core.Models;
 using Microsoft.EntityFrameworkCore;
 namespace Data
 {
@@ -26,5 +27,6 @@ namespace Data
         public DbSet<Backup> Backups { get; set; }
         public DbSet<SpeechToText> SpeechToTexts { get; set; }
         public DbSet<Customer> Customers { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
     }
 }
