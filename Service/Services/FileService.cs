@@ -59,9 +59,23 @@ public class FileService : IFileService
 
     public async Task<UserFile?> SoftDeleteFileAsync(int fileId)
     {
-        await _fileRepository.ChangeStatus((int)FileStatus.SoftDeleted, fileId);
-        return await _fileRepository.GetByIdAsync(fileId);
+        var file = await _fileRepository.GetByIdAsync(fileId);
+        if (file == null)
+        {
+            _logger.LogWarning("File with ID {FileId} not found for soft delete.", fileId);
+            return null;
+        }
+
+        file.Status = (int)FileStatus.SoftDeleted;
+        file.IsDeleted = true;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        await _fileRepository.UpdateAsync(file);
+        _logger.LogInformation("File {FileId} soft-deleted successfully.", fileId);
+
+        return file;
     }
+
 
     public async Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId)
     {
