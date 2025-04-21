@@ -12,7 +12,13 @@ namespace Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         { }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            // מסנן גלובלי שמסתיר קבצים שנמחקו רך
+            modelBuilder.Entity<UserFile>().HasQueryFilter(f => !f.IsDeleted);
+        }
 
         public DbSet<User> Users { get; set; }
         public DbSet<UserFile> Files { get; set; }
