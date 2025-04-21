@@ -14,7 +14,7 @@ public class FileRepository : Repository<UserFile>, IFileRepository
 
     public async Task<UserFile?> GetByIdAsync(int fileId)
     {
-        return await _context.Files.FirstOrDefaultAsync(f => f.Id == fileId);
+        return await _context.Files.FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
     }
 
     public async Task ChangeStatus(int status, int fileId)
