@@ -1,5 +1,6 @@
 ﻿
 
+using Amazon.Auth.AccessControlPolicy;
 using Amazon.S3;
 using Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,10 +26,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder => builder.WithOrigins("http://localhost:5173") // מקור ה-React שלך
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader(); 
 });
 
 
