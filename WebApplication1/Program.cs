@@ -26,7 +26,10 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Services.AddCors(options =>
 {
-    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader(); 
+    options.AddPolicy("AllowAll", policy =>
+      policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
 
 
