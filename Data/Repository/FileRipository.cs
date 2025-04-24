@@ -3,6 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 public class FileRepository : Repository<UserFile>, IFileRepository
 {
+    public enum FileStatus
+    {
+        UploadedByClient = 1,
+        WaitingForTyping = 2,
+        TypingInProgress = 3,
+        TypedAndUploaded = 4,
+        DownloadedByClient = 5,
+        UpdatedVersion = 6,
+        SoftDeleted = 99
+    }
     public FileRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<IEnumerable<UserFile>> GetFilesByUserIdAsync(int userId)
@@ -39,5 +49,22 @@ public class FileRepository : Repository<UserFile>, IFileRepository
         _context.Files.Update(file);
         await _context.SaveChangesAsync();
         return file;
+    }
+    public async Task<List<UserFile>> GetTypedFiles()
+    {
+        var files = await _context.Files
+       .Where(f => f.Status == (int)FileStatus.TypedAndUploaded)
+       .ToListAsync();
+
+
+
+        return files;
+    }
+    public async Task<List<UserFile>> GetFilesWaitingForTyping()
+    {
+        var files = await _context.Files
+       .Where(f => f.Status == (int)FileStatus.TypedAndUploaded)
+       .ToListAsync();
+        return files;
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Amazon.S3.Model;
 using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
+using static FileService;
 
 namespace WebApplication1.Controllers
 {
@@ -28,6 +29,20 @@ namespace WebApplication1.Controllers
         {
             var stats = await _fileService.GetSystemStatsAsync();
             return Ok(stats);
+        }
+        [HttpGet("files/waiting-for-typing")]
+        public IActionResult GetFilesWaitingForTyping()
+        {
+            var files = _fileService.GetFilesWaitingForTyping();
+
+            return Ok(files);
+        }
+        [HttpGet("files/typed")]
+        public IActionResult GetTypedFiles()
+        {
+            var files = _fileService.GetTypedFiles();
+                
+            return Ok(files);
         }
 
         [HttpGet("download/stream/{fileId}")]

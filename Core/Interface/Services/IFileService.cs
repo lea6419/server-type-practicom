@@ -12,4 +12,6 @@ public interface IFileService
       Task<string> GetDownloadUrlAsync(int fileId);
     Task<Stream> GetFileStreamAsync(int fileId);
     Task<SystemStatsDto> GetSystemStatsAsync();
+    Task<List<UserFile>> GetTypedFiles();
+    Task<List<UserFile>> GetFilesWaitingForTyping();
 }

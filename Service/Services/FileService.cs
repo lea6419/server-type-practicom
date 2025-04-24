@@ -177,4 +177,18 @@ public class FileService : IFileService
 
         return await _s3Service.GetFileStreamAsync(userFile.FilePath);
     }
+
+    public async Task<List<UserFile>> GetTypedFiles()
+    {
+        var files =await  _fileRepository.GetTypedFiles();
+           
+        return files;
+    }
+    public async Task<List<UserFile>> GetFilesWaitingForTyping()
+    {
+        var files = await _fileRepository.GetFilesWaitingForTyping();
+
+        return files;
+    }
+
 }
