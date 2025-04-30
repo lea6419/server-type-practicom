@@ -149,6 +149,21 @@ namespace WebApplication1.Controllers
             return Ok(sortedFiles);
         }
 
+        [HttpGet("allFiles")]
+        public async Task<IActionResult> GetUAllFiles()
+        {
+            _logger.LogInformation("Retrieving all files ");
+            var files = await _fileService.GetAllFileAsync();
+            if (files == null || !files.Any())
+            {
+                _logger.LogWarning("No files found");
+                return NotFound(new { message = "No files found for this user." });
+            }
+
+            var sortedFiles = files.OrderBy(f => f.CreatedAt).ToList();
+            return Ok(sortedFiles);
+        }
+
         [HttpDelete("{fileId}")]
         public async Task<IActionResult> SoftDeleteFile(int fileId)
         {

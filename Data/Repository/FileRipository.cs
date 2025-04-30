@@ -21,6 +21,12 @@ public class FileRepository : Repository<UserFile>, IFileRepository
             .Where(f => f.UserId == userId && !f.IsDeleted) // מסנן קבצים שנמחקו רך
             .ToListAsync();
     }
+    public async Task<IEnumerable<UserFile>> GetAllFileAsync()
+    {
+        return await _context.Files
+            .Where(f => !f.IsDeleted) // מסנן קבצים שנמחקו רך
+            .ToListAsync();
+    }
 
     public async Task<UserFile?> GetByIdAsync(int fileId)
     {

@@ -177,6 +177,10 @@ public class FileService : IFileService
 
         return await _s3Service.GetFileStreamAsync(userFile.FilePath);
     }
+    public async Task<IEnumerable<UserFile>> GetAllFileAsync()
+    {
+        return await _fileRepository.GetAllAsync();
+    }
 
     public async Task<List<UserFile>> GetTypedFiles()
     {

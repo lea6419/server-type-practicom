@@ -14,4 +14,5 @@ public interface IFileService
     Task<SystemStatsDto> GetSystemStatsAsync();
     Task<List<UserFile>> GetTypedFiles();
     Task<List<UserFile>> GetFilesWaitingForTyping();
+      Task<IEnumerable<UserFile>> GetAllFileAsync();
 }

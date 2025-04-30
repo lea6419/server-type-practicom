@@ -7,6 +7,9 @@ public class FileDto
     public string FilePath { get; set; }
     public DateTime UploadDate { get; set; }
     public int UserId { get; set; }
+
+    public string UserName { get; set; }
+
     public int Size { get; set; }
     public string FileType { get; set; }
 }
