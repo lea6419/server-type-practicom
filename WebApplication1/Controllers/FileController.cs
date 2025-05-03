@@ -47,30 +47,30 @@ namespace WebApplication1.Controllers
             return Ok(files);
         }
 
-        [HttpGet("download/stream/{fileId}")]
-        public async Task<IActionResult> DownloadFileFromS3(int fileId)
-        {
-            try
-            {
-                // קריאה לשירות הקבצים לקבלת ה-Stream של הקובץ
-                var fileStream = await _fileService.GetFileStreamAsync(fileId);
+        //[HttpGet("download/stream/{fileId}")]
+        //public async Task<IActionResult> DownloadFileFromS3(int fileId)
+        //{
+        //    try
+        //    {
+        //        // קריאה לשירות הקבצים לקבלת ה-Stream של הקובץ
+        //        var fileStream = await _fileService.GetFileStreamAsync(fileId);
 
-                if (fileStream == null)
-                {
-                    _logger.LogWarning("File not found for fileId: {FileId}", fileId);
-                    return NotFound("File not found in S3");
-                }
+        //        if (fileStream == null)
+        //        {
+        //            _logger.LogWarning("File not found for fileId: {FileId}", fileId);
+        //            return NotFound("File not found in S3");
+        //        }
 
 
-                // החזרת הקובץ כתגובה
-                return File(fileStream, "", "");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error downloading file with ID: {FileId}", fileId);
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+        //        // החזרת הקובץ כתגובה
+        //        return File(fileStream, "", "");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error downloading file with ID: {FileId}", fileId);
+        //        return StatusCode(500, $"Internal server error: {ex.Message}");
+        //    }
+        //}
 
         [HttpGet("download/{fileId}")]
 
@@ -201,17 +201,16 @@ namespace WebApplication1.Controllers
             // העלאה בפועל של הקובץ
             var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
 
-         //   string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
+            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
             string email = "le6736419@gmail.com"; // לדוגמה
 
             string subject = "קובץ חדש הועלה";
-            string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href=\"\">כאן</a>.</p>";
+            string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href={fileUrl}>כאן</a>.</p>";
 
             await emailService.SendEmailAsync(email, subject, body);
 
-            using var fileStream = await _fileService.GetFileStreamAsync(userFile.Id);
             // אם רוצים לשלוח קובץ מצורף
-            // await emailService.SendEmailAsync(email, subject, body, fileStream, userFile.FileName);
+          //await emailService.SendEmailAsync(email, subject, body, userFile.FileName);
 
             return Ok(new { message = "File uploaded successfully", file = userFile });
         }
