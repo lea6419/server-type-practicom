@@ -167,20 +167,20 @@ public class FileService : IFileService
         return await _s3Service.GetDownloadUrlAsync(userFile.FilePath);
     }
 
-    //public async Task<Stream> GetFileStreamAsync(int fileId)
-    //{
-    //    var userFile = await _fileRepository.GetByIdAsync(fileId);
-    //    if (userFile == null)
-    //    {
-    //        throw new ArgumentException("File not found.");
-    //    }
+    public async Task<Stream> GetFileStreamAsync(int fileId)
+    {
+        var userFile = await _fileRepository.GetByIdAsync(fileId);
+        if (userFile == null)
+        {
+            throw new ArgumentException("File not found.");
+        }
 
-    //    return await _s3Service.GetFileStreamAsync(userFile.FilePath);
-    //}
-    //public async Task<IEnumerable<UserFile>> GetAllFileAsync()
-    //{
-    //    return await _fileRepository.GetAllAsync();
-    //}
+        return await _s3Service.GetFileStreamAsync(userFile.FilePath);
+    }
+    public async Task<IEnumerable<UserFile>> GetAllFileAsync()
+    {
+        return await _fileRepository.GetAllAsync();
+    }
 
     public async Task<List<UserFile>> GetTypedFiles()
     {

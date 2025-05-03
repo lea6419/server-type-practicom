@@ -10,8 +10,8 @@ public interface IFileService
     Task<UserFile?> SoftDeleteFileAsync(int fileId);
     Task<bool> DeleteFileAsync(int fileId);
       Task<string> GetDownloadUrlAsync(int fileId);
-   // Task<Stream> GetFileStreamAsync(int fileId);
-   // Task<SystemStatsDto> GetSystemStatsAsync();
+    Task<Stream> GetFileStreamAsync(int fileId);
+    Task<SystemStatsDto> GetSystemStatsAsync();
     Task<List<UserFile>> GetTypedFiles();
     Task<List<UserFile>> GetFilesWaitingForTyping();
       Task<IEnumerable<UserFile>> GetAllFileAsync();

@@ -1,46 +1,53 @@
-﻿
+﻿using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 
 namespace Service.Services
 {
-    using MailKit.Net.Smtp;
-    using MailKit.Security;
-    using MimeKit;
-    using System;
-    using System.Threading.Tasks;
+    public class EmailSettings
+    {
+        public string From { get; set; }
+        public string Password { get; set; }
+        public string SmtpServer { get; set; }
+        public int SmtpPort { get; set; }
+    }
 
     public class EmailService
     {
+        private readonly EmailSettings _settings;
+
+        public EmailService(IOptions<EmailSettings> settings)
+        {
+            _settings = settings.Value;
+        }
+
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("י ז", "z036166419@gmail.com"));
-            message.To.Add(new MailboxAddress("", toEmail));
+            message.From.Add(MailboxAddress.Parse(_settings.From));
+            message.To.Add(MailboxAddress.Parse(toEmail));
             message.Subject = subject;
 
-            message.Body = new TextPart("plain")
+            message.Body = new TextPart("html")  // אפשר גם "plain"
             {
                 Text = body
             };
 
             try
             {
-                using (var client = new SmtpClient())
-                {
-                    await client.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-
-                    await client.AuthenticateAsync("z036166419@gmail.com", "סיסמה_לאפליקציה");
-
-                    await client.SendAsync(message);
-
-                    await client.DisconnectAsync(true);
-                    Console.WriteLine("Email sent successfully.");
-                }
+                using var client = new SmtpClient();
+                await client.ConnectAsync(_settings.SmtpServer, _settings.SmtpPort, SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync(_settings.From, _settings.Password);
+                await client.SendAsync(message);
+                await client.DisconnectAsync(true);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error sending email: " + ex.Message);
+                Console.WriteLine("Email send failed: " + ex.Message);
             }
         }
     }
 }
-

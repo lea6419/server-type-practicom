@@ -89,8 +89,12 @@ builder.Services.AddScoped<ISpeechToTextService, SpeechToTextService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ILogger<UserService>, Logger<UserService>>();
 builder.Services.AddControllers();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddSwaggerGen(c =>
 {
