@@ -7,6 +7,7 @@ using Amazon.S3.Model;
 using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using static FileService;
+using Service.Services;
 
 namespace WebApplication1.Controllers
 {
@@ -14,14 +15,15 @@ namespace WebApplication1.Controllers
     {
         private readonly IFileService _fileService;
         private readonly AuthService authService;
-
+        private readonly EmailService emailService;
         private readonly ILogger<FileController> _logger;
 
-        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService)
+        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService, EmailService emailService)
         {
             _fileService = fileService;
             _logger = logger;
             this.authService = authService;
+            this.emailService = emailService;
         }
 
         [HttpGet("stats")]
@@ -41,7 +43,7 @@ namespace WebApplication1.Controllers
         public IActionResult GetTypedFiles()
         {
             var files = _fileService.GetTypedFiles();
-                
+
             return Ok(files);
         }
 
@@ -61,7 +63,7 @@ namespace WebApplication1.Controllers
 
 
                 // החזרת הקובץ כתגובה
-                return File(fileStream,"","");
+                return File(fileStream, "", "");
             }
             catch (Exception ex)
             {
@@ -189,28 +191,31 @@ namespace WebApplication1.Controllers
                 return BadRequest(new { message = "Invalid file upload" });
             }
 
-            // הסרת קטע הקוד שאחראי על אימות המשתמש
-             var userIdClaim = User.FindFirst("id");
-            if (userIdClaim == null)
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
                 _logger.LogWarning("Unauthorized user attempt to upload file.");
                 return Unauthorized(new { message = "User not authorized" });
             }
 
-            if (!int.TryParse(userIdClaim.Value, out int userId))
-            {
-                _logger.LogWarning("Invalid user ID retrieved from claims.");
-                return Unauthorized(new { message = "Invalid user ID" });
-            }
+            // העלאה בפועל של הקובץ
+            var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
 
-            // כאן, ניתן לקבוע userId לערך ברירת מחדל או לשנות את הלוגיקה שלך בהתאם
-            
-            var userFile = await _fileService.UploadFileAsync(file, deadline, userId);
-            _logger.LogInformation("File uploaded successfully for user ID: {UserId}", userId);
+            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
+            string email = "le6736419@gmail.com"; // לדוגמה
+
+            string subject = "קובץ חדש הועלה";
+            string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href=\"{fileUrl}\">כאן</a>.</p>";
+
+            await emailService.SendEmailAsync(email, subject, body);
+
+            using var fileStream = await _fileService.GetFileStreamAsync(userFile.Id);
+            // אם רוצים לשלוח קובץ מצורף
+            // await emailService.SendEmailAsync(email, subject, body, fileStream, userFile.FileName);
 
             return Ok(new { message = "File uploaded successfully", file = userFile });
         }
 
-    }
 
+    }
 }
