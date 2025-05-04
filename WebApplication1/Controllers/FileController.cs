@@ -201,11 +201,11 @@ namespace WebApplication1.Controllers
             // העלאה בפועל של הקובץ
            var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
 
-          //  string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
+            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
             string email = "le6736419@gmail.com"; // לדוגמה
 
             string subject = "קובץ חדש הועלה";
-            string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href=>כאן</a>.</p>";
+            string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href={fileUrl}>כאן</a>.</p>";
 
 
             await emailService.SendEmailAsync(email, subject, body);
