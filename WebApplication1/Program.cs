@@ -13,6 +13,14 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 //builder.WebHost.UseUrls("http://*:80");
+// קריאת ההגדרות מתוך appsettings.json > EmailSettings
+builder.Services.Configure<EmailSettings>(options =>
+{
+    options.From = Environment.GetEnvironmentVariable("EMAIL_FROM");
+    options.Password = Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
+    options.SmtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER");
+    options.SmtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587");
+});
 
 builder.Logging.AddConsole();
 

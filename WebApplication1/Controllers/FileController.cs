@@ -207,6 +207,7 @@ namespace WebApplication1.Controllers
             string subject = "קובץ חדש הועלה";
             string body = $"<p>קובץ הועלה בהצלחה. ניתן לגשת אליו <a href=>כאן</a>.</p>";
 
+
             await emailService.SendEmailAsync(email, subject, body);
 
             // אם רוצים לשלוח קובץ מצורף
