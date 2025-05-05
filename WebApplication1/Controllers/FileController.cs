@@ -17,13 +17,15 @@ namespace WebApplication1.Controllers
         private readonly AuthService authService;
         private readonly EmailService emailService;
         private readonly ILogger<FileController> _logger;
+        private readonly UserService _userService;
 
-        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService, EmailService emailService)
+        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService, EmailService emailService,UserService userService)
         {
             _fileService = fileService;
             _logger = logger;
             this.authService = authService;
             this.emailService = emailService;
+            this._userService = userService;
         }
 
         [HttpGet("stats")]
@@ -180,9 +182,113 @@ namespace WebApplication1.Controllers
             _logger.LogInformation("File ID: {FileId} soft deleted successfully", fileId);
             return Ok(new { message = "File soft deleted successfully", file = deletedFile });
         }
-        [HttpPost("upload")]
+        [HttpPost("upload-typist")]
         [Authorize]
-        public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromForm] DateTime deadline)
+        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] DateTime deadline)
+        {
+            _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
+
+            if (file == null || file.Length == 0)
+            {
+                _logger.LogWarning("Invalid file upload attempt.");
+                return BadRequest(new { message = "Invalid file upload" });
+            }
+
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                _logger.LogWarning("Unauthorized user attempt to upload file.");
+                return Unauthorized(new { message = "User not authorized" });
+            }
+
+            var userFile = await _fileService.UploadFileAsync(file, deadline, userId);
+            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
+
+            var user = await _userService.GetUserByIdAsync(userId); // ✅ מתוקן כאן
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for ID {UserId}", userId);
+                return NotFound(new { message = "User not found" });
+            }
+
+            string email = user.Email;
+            string subject = "📎 קובץ חדש הועלה למערכת";
+
+            string body = $@"
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f5f5;
+                padding: 20px;
+                color: #333;
+            }}
+            .container {{
+                background-color: #fff;
+                border-radius: 10px;
+                padding: 30px;
+                max-width: 600px;
+                margin: auto;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }}
+            .button {{
+                background-color: #4CAF50;
+                color: white;
+                padding: 12px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                margin-top: 20px;
+                border-radius: 5px;
+            }}
+            .footer {{
+                margin-top: 30px;
+                font-size: 12px;
+                color: #888;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <h2>🔔 קובץ חדש הועלה בהצלחה</h2>
+            <p>שלום,</p>
+            <p>קובץ חדש הועלה למערכת וניתן להורדה בלחיצה על הכפתור מטה:</p>
+            <a class='button' href='{fileUrl}' target='_blank'>הורד קובץ</a>
+            <div class='footer'>
+                <p>מייל זה נשלח באופן אוטומטי ממערכת הקבצים שלך.</p>
+            </div>
+        </div>
+    </body>
+    </html>";
+
+
+            await emailService.SendEmailAsync(email, subject, body);
+
+            var userFileDto = new UserFileDto
+            {
+                Id = userFile.Id,
+                FileName = userFile.FileName,
+                FilePath = userFile.FilePath,
+                FileType = userFile.FileType,
+                Deadline = userFile.Deadline,
+                Status = userFile.Status,
+                Size = userFile.Size,
+                CreatedAt = userFile.CreatedAt,
+                DownloadUrl = fileUrl
+            };
+
+            return Ok(new
+            {
+                message = "File uploaded successfully",
+                file = userFileDto
+            });
+        }
+
+        [HttpPost("upload-client")]
+        [Authorize]
+        public async Task<IActionResult> UploadFileFromClient([FromForm] IFormFile file, [FromForm] DateTime deadline)
         {
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
             if (file == null || file.Length == 0)
@@ -199,7 +305,7 @@ namespace WebApplication1.Controllers
             }
 
             // העלאה בפועל של הקובץ
-           var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
+            var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
 
             string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
             string email = "le6736419@gmail.com"; // לדוגמה
@@ -229,7 +335,6 @@ namespace WebApplication1.Controllers
                 file = userFileDto
             });
         }
-
 
     }
 }
