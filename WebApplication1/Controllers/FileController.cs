@@ -210,10 +210,24 @@ namespace WebApplication1.Controllers
 
             await emailService.SendEmailAsync(email, subject, body);
 
-            // אם רוצים לשלוח קובץ מצורף
-          //await emailService.SendEmailAsync(email, subject, body, userFile.FileName);
+            var userFileDto = new UserFileDto
+            {
+                Id = userFile.Id,
+                FileName = userFile.FileName,
+                FilePath = userFile.FilePath,
+                FileType = userFile.FileType,
+                Deadline = userFile.Deadline,
+                Status = userFile.Status,
+                Size = userFile.Size,
+                CreatedAt = userFile.CreatedAt,
+                DownloadUrl = fileUrl
+            };
 
-            return Ok(new { message = "File uploaded successfully", file = userFile });
+            return Ok(new
+            {
+                message = "File uploaded successfully",
+                file = userFileDto
+            });
         }
 
 
