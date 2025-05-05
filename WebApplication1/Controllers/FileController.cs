@@ -17,9 +17,9 @@ namespace WebApplication1.Controllers
         private readonly AuthService authService;
         private readonly EmailService emailService;
         private readonly ILogger<FileController> _logger;
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
 
-        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService, EmailService emailService,UserService userService)
+        public FileController(IFileService fileService, ILogger<FileController> logger, AuthService authService, EmailService emailService,IUserService userService)
         {
             _fileService = fileService;
             _logger = logger;
