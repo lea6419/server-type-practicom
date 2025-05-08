@@ -9,16 +9,6 @@ public class FileService : IFileService
     private readonly ILogger<FileService> _logger;
     private readonly IUserRepository _userRepository;
 
-    public enum FileStatus
-    {
-        UploadedByClient = 1,
-        WaitingForTyping = 2,
-        TypingInProgress = 3,
-        TypedAndUploaded = 4,
-        DownloadedByClient = 5,
-        UpdatedVersion = 6,
-        SoftDeleted = 99
-    }
 
     public FileService(IFileRepository fileRepository, Is3Service s3Service, ILogger<FileService> logger, IUserRepository userRepository)
     {
@@ -48,11 +38,11 @@ public class FileService : IFileService
 
         if (user.Role == "typist")
         {
-            _fileRepository.ChangeStatus((int)FileStatus.TypingInProgress, file.Id);
+            _fileRepository.ChangeStatus(FileStatus.TypingInProgress, file.Id);
         }
         else
         {
-            _fileRepository.ChangeStatus((int)FileStatus.UploadedByClient, file.Id);
+            _fileRepository.ChangeStatus(FileStatus.UploadedByClient, file.Id);
         }
 
         return await _fileRepository.UpdateAsync(file);
@@ -67,7 +57,7 @@ public class FileService : IFileService
             return null;
         }
 
-        file.Status = (int)FileStatus.SoftDeleted;
+        file.Status = FileStatus.SoftDeleted;
         file.IsDeleted = true;
         file.UpdatedAt = DateTime.UtcNow;
 
@@ -87,33 +77,84 @@ public class FileService : IFileService
             TypistsCount = users.Count(u => u.Role == "typist"),
             ClientsCount = users.Count(u => u.Role == "client"),
             TotalFiles = files.Count(),
-            FilesWaiting = files.Count(f => f.Status == (int)FileStatus.WaitingForTyping),
-            FilesInProgress = files.Count(f => f.Status == (int)FileStatus.TypingInProgress),
-            FilesCompleted = files.Count(f => f.Status == (int)FileStatus.TypedAndUploaded)
+            FilesWaiting = files.Count(f => f.Status == FileStatus.WaitingForTyping),
+            FilesInProgress = files.Count(f => f.Status ==FileStatus.TypingInProgress),
+            FilesCompleted = files.Count(f => f.Status == (FileStatus.TypedAndUploaded))
         };
     }
 
 
     public async Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId)
     {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new ArgumentException("User not found.");
+        }
+
+        if (file == null || file.Length == 0)
+        {
+            throw new ArgumentException("No file uploaded.");
+        }
+
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = await _s3Service.UploadFileAsync(file, fileName);
 
-        var userFile = new UserFile
-        {
-            UserId = userId,
-            Status = (int)FileStatus.WaitingForTyping,
-            FileName = file.FileName,
-            FilePath = fileName,
-            FileType = file.ContentType,
-            Size = (int)file.Length,
-            Deadline = deadline,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        UserFile userFile;
 
-        return await _fileRepository.AddAsync(userFile);
+        if (user.Role == "client")
+        {
+            // לקוח מעלה קובץ סרוק חדש
+            userFile = new UserFile
+            {
+                UserId = userId,
+                Status = FileStatus.WaitingForTyping,
+                FileName = file.FileName,
+                OriginalFileUrl = filePath,
+                UploadedBy = "client",
+                FileType = file.ContentType,
+                Size = (int)file.Length,
+                Deadline = deadline,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            return await _fileRepository.AddAsync(userFile);
+        }
+        else if (user.Role == "typist")
+        {
+            // הקלדנית מעלה את הקובץ המוקלד עבור קובץ קיים
+            throw new InvalidOperationException("Typists must use a separate method to upload transcribed files.");
+        }
+
+        throw new InvalidOperationException("Unsupported user role.");
     }
+
+    public async Task<UserFile> UploadTranscribedFileAsync(int fileId, IFormFile file, int userId)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null || user.Role != "typist")
+        {
+            throw new ArgumentException("Only typists can upload transcribed files.");
+        }
+
+        var originalFile = await _fileRepository.GetByIdAsync(fileId);
+        if (originalFile == null)
+        {
+            throw new ArgumentException("Original file not found.");
+        }
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var filePath = await _s3Service.UploadFileAsync(file, fileName);
+
+        originalFile.TranscribedFileUrl = filePath;
+        originalFile.Status = FileStatus.TypedAndUploaded;
+        originalFile.UpdatedAt = DateTime.UtcNow;
+
+        return await _fileRepository.UpdateAsync(originalFile);
+    }
+
+
 
     public async Task<bool> DeleteFileAsync(int fileId)
     {
@@ -124,23 +165,33 @@ public class FileService : IFileService
             return false;
         }
 
-        var fileKey = file.FilePath;
-
         try
         {
-            await _s3Service.DeleteFileAsync(fileKey);
+            if (!string.IsNullOrEmpty(file.OriginalFileUrl))
+            {
+                await _s3Service.DeleteFileAsync(file.OriginalFileUrl);
+                _logger.LogInformation("Original file deleted: {FileUrl}", file.OriginalFileUrl);
+            }
+
+            if (!string.IsNullOrEmpty(file.TranscribedFileUrl))
+            {
+                await _s3Service.DeleteFileAsync(file.TranscribedFileUrl);
+                _logger.LogInformation("Transcribed file deleted: {FileUrl}", file.TranscribedFileUrl);
+            }
+
             await _fileRepository.DeleteAsync(fileId);
-            _logger.LogInformation("File {FileId} deleted successfully.", fileId);
+            _logger.LogInformation("File metadata (ID: {FileId}) deleted from database.", fileId);
+
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting file {FileId}", fileId);
+            _logger.LogError(ex, "Error deleting files for file ID {FileId}", fileId);
             return false;
         }
     }
 
-    public async Task<string> GetDownloadUrlAsync(int fileId)
+    public async Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed = false)
     {
         var userFile = await _fileRepository.GetByIdAsync(fileId);
         if (userFile == null)
@@ -157,26 +208,29 @@ public class FileService : IFileService
         // שינוי סטטוס בהתאם למי שמבצע את ההורדה
         if (user.Role == "typist")
         {
-            _fileRepository.ChangeStatus((int)FileStatus.WaitingForTyping, fileId);
+            _fileRepository.ChangeStatus(FileStatus.WaitingForTyping, fileId);
         }
         else if (user.Role == "client")
         {
-            _fileRepository.ChangeStatus((int)FileStatus.DownloadedByClient, fileId);
+            _fileRepository.ChangeStatus(FileStatus.DownloadedByClient, fileId);
         }
 
-        return await _s3Service.GetDownloadUrlAsync(userFile.FilePath);
-    }
-
-    public async Task<Stream> GetFileStreamAsync(int fileId)
-    {
-        var userFile = await _fileRepository.GetByIdAsync(fileId);
-        if (userFile == null)
+        // אם יש בקשה לקובץ המוקלד
+        if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
         {
-            throw new ArgumentException("File not found.");
+            return await _s3Service.GetDownloadUrlAsync(userFile.TranscribedFileUrl);
         }
 
-        return await _s3Service.GetFileStreamAsync(userFile.FilePath);
+        // אם לא, מחזירים את ה-URL של הקובץ הסרוק
+        if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
+        {
+            return await _s3Service.GetDownloadUrlAsync(userFile.OriginalFileUrl);
+        }
+
+        throw new ArgumentException("Neither original nor transcribed file URL found.");
     }
+
+
     public async Task<IEnumerable<UserFile>> GetAllFileAsync()
     {
         return await _fileRepository.GetAllAsync();
@@ -194,5 +248,7 @@ public class FileService : IFileService
 
         return files;
     }
+
+
 
 }

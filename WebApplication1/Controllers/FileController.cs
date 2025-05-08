@@ -98,44 +98,44 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [HttpPost("start-typing/{fileId}")]
-        public async Task<IActionResult> StartTyping(int fileId)
-        {
-            _logger.LogInformation("Starting typing for file ID: {FileId}", fileId);
-            var file = await _fileService.GetFileByIdAsync(fileId);
-            if (file == null)
-            {
-                _logger.LogWarning("File not found for ID: {FileId}", fileId);
-                return NotFound();
-            }
+        //[HttpPost("start-typing/{fileId}")]
+        //public async Task<IActionResult> StartTyping(int fileId)
+        //{
+        //    _logger.LogInformation("Starting typing for file ID: {FileId}", fileId);
+        //    var file = await _fileService.GetFileByIdAsync(fileId);
+        //    if (file == null)
+        //    {
+        //        _logger.LogWarning("File not found for ID: {FileId}", fileId);
+        //        return NotFound();
+        //    }
 
-            file.Status = 0;
-            await _fileService.UpdateFileAsync(file);
-            _logger.LogInformation("File ID: {FileId} status updated to InProgress", fileId);
+        //    file.Status = 0;
+        //    await _fileService.UpdateFileAsync(file);
+        //    _logger.LogInformation("File ID: {FileId} status updated to InProgress", fileId);
 
-            return Ok(new { message = "File is now in progress" });
-        }
-        [HttpPost("complete-typing/{fileId}")]
-        public async Task<IActionResult> CompleteTyping(int fileId, [FromBody] string newFilePath)
-        {
-            _logger.LogInformation("Completing typing for file ID: {FileId}", fileId);
-            var file = await _fileService.GetFileByIdAsync(fileId);
-            if (file == null)
-            {
-                _logger.LogWarning("File not found for ID: {FileId}", fileId);
-                return NotFound();
-            }
+        //    return Ok(new { message = "File is now in progress" });
+        //}
+        //[HttpPost("complete-typing/{fileId}")]
+        //public async Task<IActionResult> CompleteTyping(int fileId, [FromBody] string newFilePath)
+        //{
+        //    _logger.LogInformation("Completing typing for file ID: {FileId}", fileId);
+        //    var file = await _fileService.GetFileByIdAsync(fileId);
+        //    if (file == null)
+        //    {
+        //        _logger.LogWarning("File not found for ID: {FileId}", fileId);
+        //        return NotFound();
+        //    }
 
-            // עדכון נתיב הקובץ
-            file.FilePath = newFilePath;
-            file.Status = 3; // סטטוס הושלמה
-            file.UpdatedAt = DateTime.UtcNow;
+        //    // עדכון נתיב הקובץ
+        //    file.FilePath = newFilePath;
+        //    file.Status = 3; // סטטוס הושלמה
+        //    file.UpdatedAt = DateTime.UtcNow;
 
-            await _fileService.UpdateFileAsync(file);
-            _logger.LogInformation("File ID: {FileId} updated and marked as completed", fileId);
+        //    await _fileService.UpdateFileAsync(file);
+        //    _logger.LogInformation("File ID: {FileId} updated and marked as completed", fileId);
 
-            return Ok(new { message = "File has been updated and marked as completed" });
-        }
+        //    return Ok(new { message = "File has been updated and marked as completed" });
+        //}
 
 
         [HttpGet("user-files/{userId}")]
@@ -184,8 +184,9 @@ namespace WebApplication1.Controllers
         }
         [HttpPost("upload-typist")]
         [Authorize]
-        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] DateTime deadline)
+        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileName)
         {
+            var deadline=DateTime.Now;
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
 
             if (file == null || file.Length == 0)
@@ -200,8 +201,11 @@ namespace WebApplication1.Controllers
                 _logger.LogWarning("Unauthorized user attempt to upload file.");
                 return Unauthorized(new { message = "User not authorized" });
             }
+            var typedFileName = Path.GetFileNameWithoutExtension(originalFileName) + "-typed" + Path.GetExtension(file.FileName);
+            var typedFilePath = Path.Combine("Uploads", "TypedFiles", typedFileName); // מיקום שמירת הקובץ בשרת
+            var userFile = await _fileService.UploadTranscribedFileAsync(fileId, file, userId);
 
-            var userFile = await _fileService.UploadFileAsync(file, deadline, userId);
+
             string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
 
             var user = await _userService.GetUserByIdAsync(userId); // ✅ מתוקן כאן
@@ -270,7 +274,8 @@ namespace WebApplication1.Controllers
             {
                 Id = userFile.Id,
                 FileName = userFile.FileName,
-                FilePath = userFile.FilePath,
+                TranscribedFileUrl=userFile.TranscribedFileUrl,
+                OriginalFileUrl = userFile.OriginalFileUrl,
                 FileType = userFile.FileType,
                 Deadline = userFile.Deadline,
                 Status = userFile.Status,
@@ -305,9 +310,9 @@ namespace WebApplication1.Controllers
             }
 
             // העלאה בפועל של הקובץ
-            var userFile = await _fileService.UploadFileAsync(file, deadline, userId); // תוודא שהשירות הזה קיים
 
-            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
+            var userFile = await _fileService.UploadFileAsync(file, deadline, userId);
+            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id,true);
             string email = "le6736419@gmail.com"; // לדוגמה
 
             string subject = "קובץ חדש הועלה";
@@ -320,7 +325,8 @@ namespace WebApplication1.Controllers
             {
                 Id = userFile.Id,
                 FileName = userFile.FileName,
-                FilePath = userFile.FilePath,
+               OriginalFileUrl=userFile.OriginalFileUrl,
+               TranscribedFileUrl=userFile.TranscribedFileUrl,
                 FileType = userFile.FileType,
                 Deadline = userFile.Deadline,
                 Status = userFile.Status,

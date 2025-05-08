@@ -9,8 +9,8 @@ public interface IFileService
     Task<UserFile> UploadFileAsync(IFormFile file, DateTime deadline, int userId); // תיקון שם המתודה
     Task<UserFile?> SoftDeleteFileAsync(int fileId);
     Task<bool> DeleteFileAsync(int fileId);
-      Task<string> GetDownloadUrlAsync(int fileId);
-    Task<Stream> GetFileStreamAsync(int fileId);
+      Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed=false);
+
     Task<SystemStatsDto> GetSystemStatsAsync();
     Task<List<UserFile>> GetTypedFiles();
     Task<List<UserFile>> GetFilesWaitingForTyping();

@@ -1,18 +1,10 @@
 ﻿using Data;
 using Microsoft.EntityFrameworkCore;
 
+
 public class FileRepository : Repository<UserFile>, IFileRepository
 {
-    public enum FileStatus
-    {
-        UploadedByClient = 1,
-        WaitingForTyping = 2,
-        TypingInProgress = 3,
-        TypedAndUploaded = 4,
-        DownloadedByClient = 5,
-        UpdatedVersion = 6,
-        SoftDeleted = 99
-    }
+
     public FileRepository(ApplicationDbContext context) : base(context) { }
 
     public async Task<IEnumerable<UserFile>> GetFilesByUserIdAsync(int userId)
@@ -35,12 +27,13 @@ public class FileRepository : Repository<UserFile>, IFileRepository
         .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
     }
 
-    public async Task ChangeStatus(int status, int fileId)
+    public async Task ChangeStatus(FileStatus status, int fileId)
     {
-        var file = await GetByIdAsync(fileId);
+        var file = await _context.Files.FindAsync(fileId);
         if (file == null) return;
 
-        file.Status = status;
+        file.Status = (global::FileStatus)(int)status;
+        file.UpdatedAt = DateTime.UtcNow;
         _context.Files.Update(file);
         await _context.SaveChangesAsync();
     }
@@ -59,18 +52,39 @@ public class FileRepository : Repository<UserFile>, IFileRepository
     public async Task<List<UserFile>> GetTypedFiles()
     {
         var files = await _context.Files
-       .Where(f => f.Status == (int)FileStatus.TypedAndUploaded)
+      .Where(f => f.Status == FileStatus.TypingInProgress)
+
        .ToListAsync();
-
-
-
         return files;
     }
+    public async Task UploadOriginalFileAsync(UserFile newFile)
+    {
+        newFile.Status = (global::FileStatus)(int)FileStatus.UploadedByClient;
+        newFile.CreatedAt = DateTime.UtcNow;
+        _context.Files.Add(newFile);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UploadTranscribedFileAsync(int fileId, string filePath)
+    {
+        var file = await _context.Files.FindAsync(fileId);
+        if (file == null) return;
+
+        file.TranscribedFileUrl = filePath;
+        file.Status = (global::FileStatus)(int)FileStatus.TypedAndUploaded;
+        file.UpdatedAt = DateTime.UtcNow;
+
+        _context.Files.Update(file);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<List<UserFile>> GetFilesWaitingForTyping()
     {
         var files = await _context.Files
-       .Where(f => f.Status == (int)FileStatus.TypedAndUploaded)
+       .Where(f => f.Status == FileStatus.WaitingForTyping)
        .ToListAsync();
         return files;
     }
+
+
 }

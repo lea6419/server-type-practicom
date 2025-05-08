@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Data.Repository
+namespace Core.Models
 {
-    internal class UploadController
+    internal class FileStatos
     {
     }
 }

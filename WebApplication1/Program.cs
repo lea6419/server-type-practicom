@@ -83,16 +83,12 @@ IServiceCollection serviceCollection = builder.Services.AddScoped<Is3Service, S3
 // Add services to the container.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
-builder.Services.AddScoped<IProgressRepository, ProgressRepository>();
-builder.Services.AddScoped<IBackupRepository, BackupRepository>();
-builder.Services.AddScoped<ISpeechToTextRepository, SpeechToTextRepository>();
+
 builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IProgressService, ProgressService>();
-builder.Services.AddScoped<IBackupService, BackupService>();
-builder.Services.AddScoped<ISpeechToTextService, SpeechToTextService>();
+
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ILogger<UserService>, Logger<UserService>>();
