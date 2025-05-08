@@ -184,7 +184,7 @@ namespace WebApplication1.Controllers
         }
         [HttpPost("upload-typist")]
         [Authorize]
-        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileName)
+        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileName,[FromBody] int fileId )
         {
             var deadline=DateTime.Now;
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);

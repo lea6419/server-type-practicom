@@ -15,4 +15,5 @@ public interface IFileService
     Task<List<UserFile>> GetTypedFiles();
     Task<List<UserFile>> GetFilesWaitingForTyping();
       Task<IEnumerable<UserFile>> GetAllFileAsync();
+    Task<UserFile> UploadTranscribedFileAsync(int fileId, IFormFile file, int userId);
 }

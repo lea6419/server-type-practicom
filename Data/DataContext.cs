@@ -24,8 +24,6 @@ namespace Data
         public DbSet<User> Users { get; set; }
         public DbSet<UserFile> Files { get; set; }
         public DbSet<Progress> Progresses { get; set; }
-        public DbSet<Backup> Backups { get; set; }
-        public DbSet<SpeechToText> SpeechToTexts { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
     }

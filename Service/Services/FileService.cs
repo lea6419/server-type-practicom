@@ -38,11 +38,11 @@ public class FileService : IFileService
 
         if (user.Role == "typist")
         {
-            _fileRepository.ChangeStatus(FileStatus.TypingInProgress, file.Id);
+            _fileRepository.ChangeStatus(FileStatus.InProgress, file.Id);
         }
         else
         {
-            _fileRepository.ChangeStatus(FileStatus.UploadedByClient, file.Id);
+            _fileRepository.ChangeStatus(FileStatus.UploadedByUser, file.Id);
         }
 
         return await _fileRepository.UpdateAsync(file);
@@ -77,9 +77,9 @@ public class FileService : IFileService
             TypistsCount = users.Count(u => u.Role == "typist"),
             ClientsCount = users.Count(u => u.Role == "client"),
             TotalFiles = files.Count(),
-            FilesWaiting = files.Count(f => f.Status == FileStatus.WaitingForTyping),
-            FilesInProgress = files.Count(f => f.Status ==FileStatus.TypingInProgress),
-            FilesCompleted = files.Count(f => f.Status == (FileStatus.TypedAndUploaded))
+            FilesWaiting = files.Count(f => f.Status == FileStatus.UploadedByUser),
+            FilesInProgress = files.Count(f => f.Status ==FileStatus.InProgress),
+            FilesCompleted = files.Count(f => f.Status == (FileStatus.ReturnedToUser))
         };
     }
 
@@ -108,7 +108,7 @@ public class FileService : IFileService
             userFile = new UserFile
             {
                 UserId = userId,
-                Status = FileStatus.WaitingForTyping,
+                Status = FileStatus.UploadedByUser,
                 FileName = file.FileName,
                 OriginalFileUrl = filePath,
                 UploadedBy = "client",
@@ -148,7 +148,7 @@ public class FileService : IFileService
         var filePath = await _s3Service.UploadFileAsync(file, fileName);
 
         originalFile.TranscribedFileUrl = filePath;
-        originalFile.Status = FileStatus.TypedAndUploaded;
+        originalFile.Status = FileStatus.Completed;
         originalFile.UpdatedAt = DateTime.UtcNow;
 
         return await _fileRepository.UpdateAsync(originalFile);
@@ -208,11 +208,11 @@ public class FileService : IFileService
         // שינוי סטטוס בהתאם למי שמבצע את ההורדה
         if (user.Role == "typist")
         {
-            _fileRepository.ChangeStatus(FileStatus.WaitingForTyping, fileId);
+            _fileRepository.ChangeStatus(FileStatus.InProgress, fileId);
         }
         else if (user.Role == "client")
         {
-            _fileRepository.ChangeStatus(FileStatus.DownloadedByClient, fileId);
+            _fileRepository.ChangeStatus(FileStatus.ReturnedToUser, fileId);
         }
 
         // אם יש בקשה לקובץ המוקלד

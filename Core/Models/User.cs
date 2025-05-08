@@ -13,8 +13,6 @@
     // קשרים
     public List<UserFile> Files { get; set; }  // קשר אחד לרבים עם קבצים
     public List<Progress> Progresses { get; set; }  // קשר אחד לרבים עם התקדמות
-    public List<Backup> Backups { get; set; }  // קשר אחד לרבים עם גיבויים
-    public List<SpeechToText> SpeechToTexts { get; set; }  // קשר אחד לרבים עם המרת דיבור לטקסט
 
     public List<Customer> Customers { get; set; }
 }

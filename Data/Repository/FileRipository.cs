@@ -52,14 +52,14 @@ public class FileRepository : Repository<UserFile>, IFileRepository
     public async Task<List<UserFile>> GetTypedFiles()
     {
         var files = await _context.Files
-      .Where(f => f.Status == FileStatus.TypingInProgress)
+      .Where(f => f.Status == FileStatus.Completed)
 
        .ToListAsync();
         return files;
     }
     public async Task UploadOriginalFileAsync(UserFile newFile)
     {
-        newFile.Status = (global::FileStatus)(int)FileStatus.UploadedByClient;
+        newFile.Status = (global::FileStatus)(int)FileStatus.UploadedByUser;
         newFile.CreatedAt = DateTime.UtcNow;
         _context.Files.Add(newFile);
         await _context.SaveChangesAsync();
@@ -71,7 +71,7 @@ public class FileRepository : Repository<UserFile>, IFileRepository
         if (file == null) return;
 
         file.TranscribedFileUrl = filePath;
-        file.Status = (global::FileStatus)(int)FileStatus.TypedAndUploaded;
+        file.Status = (global::FileStatus)(int)FileStatus.Completed;
         file.UpdatedAt = DateTime.UtcNow;
 
         _context.Files.Update(file);
@@ -81,7 +81,7 @@ public class FileRepository : Repository<UserFile>, IFileRepository
     public async Task<List<UserFile>> GetFilesWaitingForTyping()
     {
         var files = await _context.Files
-       .Where(f => f.Status == FileStatus.WaitingForTyping)
+       .Where(f => f.Status == FileStatus.UploadedByUser)
        .ToListAsync();
         return files;
     }
