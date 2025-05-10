@@ -75,7 +75,7 @@ public class FileService : IFileService
         {
             TotalUsers = users.Count(),
             TypistsCount = users.Count(u => u.Role == "typist"),
-            ClientsCount = users.Count(u => u.Role == "client"),
+            ClientsCount = users.Count(u => u.Role == "user"),
             TotalFiles = files.Count(),
             FilesWaiting = files.Count(f => f.Status == FileStatus.UploadedByUser),
             FilesInProgress = files.Count(f => f.Status ==FileStatus.InProgress),
@@ -102,7 +102,7 @@ public class FileService : IFileService
 
         UserFile userFile;
 
-        if (user.Role == "client")
+        if (user.Role == "user")
         {
             // לקוח מעלה קובץ סרוק חדש
             userFile = new UserFile
@@ -111,7 +111,7 @@ public class FileService : IFileService
                 Status = FileStatus.UploadedByUser,
                 FileName = file.FileName,
                 OriginalFileUrl = filePath,
-                UploadedBy = "client",
+                UploadedBy = "user",
                 FileType = file.ContentType,
                 Size = (int)file.Length,
                 Deadline = deadline,
@@ -218,7 +218,7 @@ public class FileService : IFileService
             _logger.LogInformation("Changing status to InProgress for fileId: {FileId}", fileId);
             _fileRepository.ChangeStatus(FileStatus.InProgress, fileId);
         }
-        else if (user.Role == "client")
+        else if (user.Role == "user")
         {
             _logger.LogInformation("Changing status to ReturnedToUser for fileId: {FileId}", fileId);
             _fileRepository.ChangeStatus(FileStatus.ReturnedToUser, fileId);

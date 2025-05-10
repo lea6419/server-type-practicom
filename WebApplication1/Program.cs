@@ -66,8 +66,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("TypeistOnly", policy => policy.RequireRole("typist"));
-    options.AddPolicy("ClientOrTypeist", policy => policy.RequireRole("client", "typist"));
-    options.AddPolicy("ClientOnly", policy => policy.RequireRole("client", "typist"));
+    options.AddPolicy("ClientOrTypeist", policy => policy.RequireRole("user", "typist"));
+    options.AddPolicy("ClientOnly", policy => policy.RequireRole("user", "typist"));
 
 
 });

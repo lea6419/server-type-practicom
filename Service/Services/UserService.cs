@@ -164,7 +164,7 @@ public class UserService : IUserService
     {
         try
         {
-            return await _userRepository.GetAllAsync(u => u.Role == "client");
+            return await _userRepository.GetAllAsync(u => u.Role == "user");
         }
         catch (Exception ex)
         {
