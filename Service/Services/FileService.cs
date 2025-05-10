@@ -193,43 +193,52 @@ public class FileService : IFileService
 
     public async Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed = false)
     {
+        _logger.LogInformation("Start GetDownloadUrlAsync for fileId: {FileId}, isTranscribed: {IsTranscribed}", fileId, isTranscribed);
+
         var userFile = await _fileRepository.GetByIdAsync(fileId);
         if (userFile == null)
         {
+            _logger.LogWarning("File not found for fileId: {FileId}", fileId);
             throw new ArgumentException("File not found.");
         }
+
+        _logger.LogInformation("File found: {FileName}, UserId: {UserId}", userFile.FileName, userFile.UserId);
 
         var user = await _userRepository.GetByIdAsync(userFile.UserId);
         if (user == null)
         {
+            _logger.LogWarning("User not found for UserId: {UserId}", userFile.UserId);
             throw new ArgumentException("User not found.");
         }
 
-        // שינוי סטטוס בהתאם למי שמבצע את ההורדה
+        _logger.LogInformation("User found: {UserName}, Role: {Role}", user.Id, user.Role);
+
         if (user.Role == "typist")
         {
+            _logger.LogInformation("Changing status to InProgress for fileId: {FileId}", fileId);
             _fileRepository.ChangeStatus(FileStatus.InProgress, fileId);
         }
         else if (user.Role == "client")
         {
+            _logger.LogInformation("Changing status to ReturnedToUser for fileId: {FileId}", fileId);
             _fileRepository.ChangeStatus(FileStatus.ReturnedToUser, fileId);
         }
 
-        // אם יש בקשה לקובץ המוקלד
         if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
         {
+            _logger.LogInformation("Returning transcribed file URL");
             return await _s3Service.GetDownloadUrlAsync(userFile.TranscribedFileUrl);
         }
 
-        // אם לא, מחזירים את ה-URL של הקובץ הסרוק
         if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
         {
+            _logger.LogInformation("Returning original file URL");
             return await _s3Service.GetDownloadUrlAsync(userFile.OriginalFileUrl);
         }
 
+        _logger.LogWarning("No file URL found for fileId: {FileId}", fileId);
         throw new ArgumentException("Neither original nor transcribed file URL found.");
     }
-
 
     public async Task<IEnumerable<UserFile>> GetAllFileAsync()
     {
