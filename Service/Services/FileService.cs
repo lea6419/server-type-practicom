@@ -117,7 +117,9 @@ public class FileService : IFileService
                 Size = (int)file.Length,
                 Deadline = deadline,
                 CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = DateTime.UtcNow,
+                Name = file.FileName
+
             };
 
             return await _fileRepository.AddAsync(userFile);

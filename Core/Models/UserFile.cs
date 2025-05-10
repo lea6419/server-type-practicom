@@ -8,6 +8,8 @@ public class UserFile:IEntity
     public int UserId { get; set; }  // מפתח זר (המשתמש                 // שהעלה את הקובץ)
     public FileStatus Status { get; set; }  // 
     public string FileName { get; set; }  // שם הקובץ
+
+    public string   Name { get; set; }         
     public string? OriginalFileUrl { get; set; }  // קובץ סרוק שהועלה ע"י המשתמש
     public string? TranscribedFileUrl { get; set; }  // קובץ מוקלד שהועלה ע"י הקלדנית
     public string UploadedBy { get; set; } // User / Admin / Transcriber
