@@ -1,6 +1,7 @@
 ﻿using Core.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System;
 
 public class FileService : IFileService
 {
@@ -133,6 +134,7 @@ public class FileService : IFileService
     public async Task<UserFile> UploadTranscribedFileAsync(int fileId, IFormFile file, int userId)
     {
         var user = await _userRepository.GetByIdAsync(userId);
+
         if (user == null || user.Role != "typist")
         {
             throw new ArgumentException("Only typists can upload transcribed files.");
@@ -227,13 +229,13 @@ public class FileService : IFileService
         if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
         {
             _logger.LogInformation("Returning transcribed file URL");
-            return await _s3Service.GetDownloadUrlAsync(userFile.TranscribedFileUrl);
+            return await _s3Service.GetDownloadUrlAsync(userFile.FileName+ "-typed");
         }
 
         if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
         {
             _logger.LogInformation("Returning original file URL");
-            return await _s3Service.GetDownloadUrlAsync(userFile.OriginalFileUrl);
+            return await _s3Service.GetDownloadUrlAsync(userFile.FileName);
         }
 
         _logger.LogWarning("No file URL found for fileId: {FileId}", fileId);

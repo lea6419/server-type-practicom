@@ -201,7 +201,7 @@ namespace WebApplication1.Controllers
                 _logger.LogWarning("Unauthorized user attempt to upload file.");
                 return Unauthorized(new { message = "User not authorized" });
             }
-            var typedFileName = Path.GetFileNameWithoutExtension(originalFileId) + "-typed" + Path.GetExtension(file.FileName);
+            var typedFileName = file.FileName+ "-typed";
             var typedFilePath = Path.Combine("Uploads", "TypedFiles", typedFileName); // מיקום שמירת הקובץ בשרת
             var userFile = await _fileService.UploadTranscribedFileAsync(fileId, file, userId);
 
