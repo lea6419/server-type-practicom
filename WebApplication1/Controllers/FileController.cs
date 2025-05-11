@@ -186,7 +186,9 @@ namespace WebApplication1.Controllers
         [Authorize]
         public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileId, [FromForm] int fileId )
         {
-            var deadline=DateTime.Now;
+            _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName, "originalFileId  ", originalFileId, " fileId ", fileId);
+
+            var deadline =DateTime.Now;
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
 
             if (file == null || file.Length == 0)
@@ -201,8 +203,8 @@ namespace WebApplication1.Controllers
                 _logger.LogWarning("Unauthorized user attempt to upload file.");
                 return Unauthorized(new { message = "User not authorized" });
             }
-            var typedFileName = file.FileName+ "-typed";
-            var typedFilePath = Path.Combine("Uploads", "TypedFiles", typedFileName); // מיקום שמירת הקובץ בשרת
+            //var typedFileName = file.FileName+ "-typed";
+           // var typedFilePath = Path.Combine("Uploads", "TypedFiles", typedFileName); // מיקום שמירת הקובץ בשרת
             var userFile = await _fileService.UploadTranscribedFileAsync(fileId, file, userId);
 
 
