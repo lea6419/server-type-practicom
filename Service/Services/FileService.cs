@@ -111,7 +111,7 @@ public class FileService : IFileService
                 UserId = userId,
                 Status = FileStatus.UploadedByUser,
                 FileName = filePath,
-                OriginalFileUrl = filePath,
+                OriginalFileUrl = fileName,
                 UploadedBy = "user",
                 FileType = file.ContentType,
                 Size = (int)file.Length,
