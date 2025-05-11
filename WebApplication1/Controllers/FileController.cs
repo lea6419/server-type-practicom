@@ -186,9 +186,6 @@ namespace WebApplication1.Controllers
         [Authorize]
         public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileId, [FromForm] int fileId )
         {
-
-
-           
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName, "originalFileId  ", originalFileId, " fileId ", fileId);
 
             var deadline =DateTime.Now;
