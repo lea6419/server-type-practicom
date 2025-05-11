@@ -186,11 +186,18 @@ namespace WebApplication1.Controllers
         [Authorize]
         public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileId, [FromForm] int fileId )
         {
+
+
+           
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName, "originalFileId  ", originalFileId, " fileId ", fileId);
 
             var deadline =DateTime.Now;
             _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
-
+            if (string.IsNullOrEmpty(originalFileId) || fileId == 0)
+            {
+                _logger.LogWarning("Missing originalFileId or fileId.");
+                return BadRequest(new { message = "Missing required file information" });
+            }
             if (file == null || file.Length == 0)
             {
                 _logger.LogWarning("Invalid file upload attempt.");
