@@ -110,7 +110,7 @@ public class FileService : IFileService
             {
                 UserId = userId,
                 Status = FileStatus.UploadedByUser,
-                FileName = file.FileName,
+                FileName = filePath,
                 OriginalFileUrl = filePath,
                 UploadedBy = "user",
                 FileType = file.ContentType,
