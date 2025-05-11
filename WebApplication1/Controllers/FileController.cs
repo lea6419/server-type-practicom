@@ -27,6 +27,57 @@ namespace WebApplication1.Controllers
             this.emailService = emailService;
             this._userService = userService;
         }
+        private string GetEmailBody(string fileUrl)
+        {
+            return $@"
+    <html>
+    <head>
+        <style>
+            body {{
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f5f5f5;
+                padding: 20px;
+                color: #333;
+            }}
+            .container {{
+                background-color: #fff;
+                border-radius: 10px;
+                padding: 30px;
+                max-width: 600px;
+                margin: auto;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }}
+            .button {{
+                background-color: #4CAF50;
+                color: white;
+                padding: 12px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                margin-top: 20px;
+                border-radius: 5px;
+            }}
+            .footer {{
+                margin-top: 30px;
+                font-size: 12px;
+                color: #888;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <h2>🔔 קובץ חדש הועלה בהצלחה</h2>
+            <p>שלום,</p>
+            <p>קובץ חדש הועלה למערכת וניתן להורדה בלחיצה על הכפתור מטה:</p>
+            <a class='button' href='{fileUrl}' target='_blank'>הורד קובץ</a>
+            <div class='footer'>
+                <p>מייל זה נשלח באופן אוטומטי ממערכת הקבצים שלך.</p>
+            </div>
+        </div>
+    </body>
+    </html>";
+        }
 
         [HttpGet("stats")]
         public async Task<IActionResult> GetSystemStats()
@@ -214,7 +265,11 @@ namespace WebApplication1.Controllers
                 return NotFound(new { message = "User not found" });
             }
 
-            await emailService.SendEmailAsync(user.Email, "📎 קובץ חדש הועלה למערכת", GetEmailBody(fileUrl));
+            string email = user.Email;
+            string subject = "📎 קובץ חדש הועלה למערכת";
+            string body = GetEmailBody(fileUrl);
+            await emailService.SendEmailAsync(email, subject, body);
+
 
             var userFileDto = new UserFileDto
             {
