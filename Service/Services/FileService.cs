@@ -142,13 +142,15 @@ public class FileService : IFileService
             throw new ArgumentException("Only typists can upload transcribed files.");
         }
 
+        _logger.LogInformation("Attempting to find original file with ID: {FileId}", fileId);
         var originalFile = await _fileRepository.GetByIdAsync(fileId);
+
         if (originalFile == null)
         {
-            throw new ArgumentException("Original file not found.");
+            _logger.LogWarning("Original file with ID {FileId} not found", fileId);
+            throw new ArgumentException(  "Original file not found" );
         }
-
-      //  var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        //  var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = await _s3Service.UploadFileAsync(file, file.FileName+"type");
 
         originalFile.TranscribedFileUrl = filePath;
