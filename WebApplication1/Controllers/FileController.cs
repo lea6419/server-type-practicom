@@ -184,103 +184,43 @@ namespace WebApplication1.Controllers
         }
         [HttpPost("upload-typist")]
         [Authorize]
-        public async Task<IActionResult> UploadFileFromTypist([FromForm] IFormFile file, [FromForm] string originalFileId, [FromForm] int fileId )
+        public async Task<IActionResult> UploadFileFromTypist([FromForm] TypistUploadDto uploadDto)
         {
-            _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName, "originalFileId  ", originalFileId, " fileId ", fileId);
+            _logger.LogInformation("Uploading file. File name: {FileName}, originalFileId: {OriginalFileId}, fileId: {FileId}",
+                uploadDto.File?.FileName, uploadDto.OriginalFileId, uploadDto.FileId);
 
-            var deadline =DateTime.Now;
-            _logger.LogInformation("Uploading file. File name: {FileName}", file?.FileName);
-            if (string.IsNullOrEmpty(originalFileId) || fileId == 0)
+            if (string.IsNullOrEmpty(uploadDto.OriginalFileId) || uploadDto.FileId == 0)
             {
-                _logger.LogWarning("Missing originalFileId or fileId.");
                 return BadRequest(new { message = "Missing required file information" });
             }
-            if (file == null || file.Length == 0)
+
+            if (uploadDto.File == null || uploadDto.File.Length == 0)
             {
-                _logger.LogWarning("Invalid file upload attempt.");
                 return BadRequest(new { message = "Invalid file upload" });
             }
 
             var userIdClaim = User.FindFirst("id");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                _logger.LogWarning("Unauthorized user attempt to upload file.");
                 return Unauthorized(new { message = "User not authorized" });
             }
-            //var typedFileName = file.FileName+ "-typed";
-           // var typedFilePath = Path.Combine("Uploads", "TypedFiles", typedFileName); // מיקום שמירת הקובץ בשרת
-            var userFile = await _fileService.UploadTranscribedFileAsync(fileId, file, userId);
 
+            var userFile = await _fileService.UploadTranscribedFileAsync(uploadDto.FileId, uploadDto.File, userId);
+            var fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
 
-            string fileUrl = await _fileService.GetDownloadUrlAsync(userFile.Id);
-
-            var user = await _userService.GetUserByIdAsync(userId); // ✅ מתוקן כאן
+            var user = await _userService.GetUserByIdAsync(userId);
             if (user == null)
             {
-                _logger.LogWarning("User not found for ID {UserId}", userId);
                 return NotFound(new { message = "User not found" });
             }
 
-            string email = user.Email;
-            string subject = "📎 קובץ חדש הועלה למערכת";
-
-            string body = $@"
-    <html>
-    <head>
-        <style>
-            body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f5f5f5;
-                padding: 20px;
-                color: #333;
-            }}
-            .container {{
-                background-color: #fff;
-                border-radius: 10px;
-                padding: 30px;
-                max-width: 600px;
-                margin: auto;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            }}
-            .button {{
-                background-color: #4CAF50;
-                color: white;
-                padding: 12px 20px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 16px;
-                margin-top: 20px;
-                border-radius: 5px;
-            }}
-            .footer {{
-                margin-top: 30px;
-                font-size: 12px;
-                color: #888;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class='container'>
-            <h2>🔔 קובץ חדש הועלה בהצלחה</h2>
-            <p>שלום,</p>
-            <p>קובץ חדש הועלה למערכת וניתן להורדה בלחיצה על הכפתור מטה:</p>
-            <a class='button' href='{fileUrl}' target='_blank'>הורד קובץ</a>
-            <div class='footer'>
-                <p>מייל זה נשלח באופן אוטומטי ממערכת הקבצים שלך.</p>
-            </div>
-        </div>
-    </body>
-    </html>";
-
-
-            await emailService.SendEmailAsync(email, subject, body);
+            await emailService.SendEmailAsync(user.Email, "📎 קובץ חדש הועלה למערכת", GetEmailBody(fileUrl));
 
             var userFileDto = new UserFileDto
             {
                 Id = userFile.Id,
                 FileName = userFile.FileName,
-                TranscribedFileUrl=userFile.TranscribedFileUrl,
+                TranscribedFileUrl = userFile.TranscribedFileUrl,
                 OriginalFileUrl = userFile.OriginalFileUrl,
                 FileType = userFile.FileType,
                 Deadline = userFile.Deadline,
@@ -296,6 +236,7 @@ namespace WebApplication1.Controllers
                 file = userFileDto
             });
         }
+
 
         [HttpPost("upload-client")]
         [Authorize]
