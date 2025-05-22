@@ -148,6 +148,29 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpGet("download-type/{fileId}")]
+
+        public async Task<IActionResult> DownloadFiletype(int fileId)
+        {
+            try
+            {
+                // קריאה לשירות הקבצים להורדת ה-URL
+                var downloadUrl = await _fileService.GetDownloadUrlAsyncType(fileId);
+                if (string.IsNullOrEmpty(downloadUrl))
+                {
+                    _logger.LogWarning("Download URL not found for fileId: {FileId}", fileId);
+                    return NotFound("File not found");
+                }
+
+                _logger.LogInformation("Redirecting to download URL: {DownloadUrl}", downloadUrl);
+                return Ok(new { url = downloadUrl });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file with ID: {FileId}", fileId);
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
 
         //[HttpPost("start-typing/{fileId}")]
         //public async Task<IActionResult> StartTyping(int fileId)

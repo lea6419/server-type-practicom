@@ -10,6 +10,7 @@ public interface IFileService
     Task<UserFile?> SoftDeleteFileAsync(int fileId);
     Task<bool> DeleteFileAsync(int fileId);
       Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed=false);
+     Task<string> GetDownloadUrlAsyncType(int fileId, bool isTranscribed = false);
 
     Task<SystemStatsDto> GetSystemStatsAsync();
     Task<List<UserFile>> GetTypedFiles();
