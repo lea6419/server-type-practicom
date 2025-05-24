@@ -258,12 +258,15 @@ public class FileService : IFileService
 
         _logger.LogInformation("File found: {FileName}, UserId: {UserId}", userFile.FileName, userFile.UserId);
 
-      
-   
-            return await _s3Service.GetDownloadUrlAsync(userFile.FileName + "-typed");
-        
 
-        
+
+        var baseName = Path.GetFileNameWithoutExtension(userFile.FileName);  // "2e95b52f-…-505f"
+        var ext = Path.GetExtension(userFile.FileName);                // ".pdf"
+        var typedKey = $"{baseName}-typed{ext}";                            // "2e95b52f-…-505f-typed.pdf"
+
+
+
+
 
         _logger.LogWarning("No file URL found for fileId: {FileId}", fileId);
         throw new ArgumentException("Neither original nor transcribed file URL found.");
