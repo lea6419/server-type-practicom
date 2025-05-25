@@ -159,7 +159,21 @@ public class FileService : IFileService
 
         return await _fileRepository.UpdateAsync(originalFile);
     }
+    public async Task SetFileStatusAsync(int fileId, FileStatus newStatus)
+    {
+        // קבלת האובייקט מהמאגר (Repository)
+        var file = await _fileRepository.GetByIdAsync(fileId);
+        if (file == null)
+        {
+            throw new ArgumentException($"File with ID {fileId} not found.");
+        }
 
+        // עדכון הסטטוס
+        file.Status = newStatus;
+
+        // שמירת השינויים במסד הנתונים
+        await _fileRepository.UpdateAsync(file);
+    }
 
 
     public async Task<bool> DeleteFileAsync(int fileId)
@@ -197,54 +211,73 @@ public class FileService : IFileService
         }
     }
 
+    //public async Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed = false)
+    //{
+    //    _logger.LogInformation("Start GetDownloadUrlAsync for fileId: {FileId}, isTranscribed: {IsTranscribed}", fileId, isTranscribed);
+
+    //    var userFile = await _fileRepository.GetByIdAsync(fileId);
+    //    if (userFile == null)
+    //    {
+    //        _logger.LogWarning("File not found for fileId: {FileId}", fileId);
+    //        throw new ArgumentException("File not found.");
+    //    }
+
+    //    _logger.LogInformation("File found: {FileName}, UserId: {UserId}", userFile.FileName, userFile.UserId);
+
+    //    var user = await _userRepository.GetByIdAsync(userFile.UserId);
+    //    if (user == null)
+    //    {
+    //        _logger.LogWarning("User not found for UserId: {UserId}", userFile.UserId);
+    //        throw new ArgumentException("User not found.");
+    //    }
+
+    //    _logger.LogInformation("User found: {UserName}, Role: {Role}", user.Id, user.Role);
+
+    //    if (user.Role == "typist")
+    //    {
+    //        _logger.LogInformation("Changing status to InProgress for fileId: {FileId}", fileId);
+    //       _fileRepository.ChangeStatus(FileStatus.InProgress, fileId);
+    //    }
+    //    else if (user.Role == "user")
+    //    {
+    //        _logger.LogInformation("Changing status to ReturnedToUser for fileId: {FileId}", fileId);
+    //        _fileRepository.ChangeStatus(FileStatus.ReturnedToUser, fileId);
+    //    }
+
+    //    if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
+    //    {
+    //        _logger.LogInformation("Returning transcribed file URL");
+    //        return await _s3Service.GetDownloadUrlAsync(userFile.FileName+ "-typed");
+    //    }
+
+    //    if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
+    //    {
+    //        _logger.LogInformation("Returning original file URL");
+    //        return await _s3Service.GetDownloadUrlAsync(userFile.FileName);
+    //    }
+
+    //    _logger.LogWarning("No file URL found for fileId: {FileId}", fileId);
+    //    throw new ArgumentException("Neither original nor transcribed file URL found.");
+    //}
+
     public async Task<string> GetDownloadUrlAsync(int fileId, bool isTranscribed = false)
     {
-        _logger.LogInformation("Start GetDownloadUrlAsync for fileId: {FileId}, isTranscribed: {IsTranscribed}", fileId, isTranscribed);
-
         var userFile = await _fileRepository.GetByIdAsync(fileId);
-        if (userFile == null)
-        {
-            _logger.LogWarning("File not found for fileId: {FileId}", fileId);
-            throw new ArgumentException("File not found.");
-        }
-
-        _logger.LogInformation("File found: {FileName}, UserId: {UserId}", userFile.FileName, userFile.UserId);
-
-        var user = await _userRepository.GetByIdAsync(userFile.UserId);
-        if (user == null)
-        {
-            _logger.LogWarning("User not found for UserId: {UserId}", userFile.UserId);
-            throw new ArgumentException("User not found.");
-        }
-
-        _logger.LogInformation("User found: {UserName}, Role: {Role}", user.Id, user.Role);
-
-        if (user.Role == "typist")
-        {
-            _logger.LogInformation("Changing status to InProgress for fileId: {FileId}", fileId);
-            _fileRepository.ChangeStatus(FileStatus.InProgress, fileId);
-        }
-        else if (user.Role == "user")
-        {
-            _logger.LogInformation("Changing status to ReturnedToUser for fileId: {FileId}", fileId);
-            _fileRepository.ChangeStatus(FileStatus.ReturnedToUser, fileId);
-        }
+        if (userFile == null) throw new ArgumentException("File not found.");
 
         if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
         {
-            _logger.LogInformation("Returning transcribed file URL");
-            return await _s3Service.GetDownloadUrlAsync(userFile.FileName+ "-typed");
+            return await _s3Service.GetDownloadUrlAsync(userFile.FileName + "-typed");
         }
 
         if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
         {
-            _logger.LogInformation("Returning original file URL");
             return await _s3Service.GetDownloadUrlAsync(userFile.FileName);
         }
 
-        _logger.LogWarning("No file URL found for fileId: {FileId}", fileId);
         throw new ArgumentException("Neither original nor transcribed file URL found.");
     }
+
     public async Task<string> GetDownloadUrlAsyncType(int fileId, bool isTranscribed = false)
     {
         _logger.LogInformation("Start GetDownloadUrlAsyncType for fileId: {FileId}, isTranscribed: {IsTranscribed}", fileId, isTranscribed);

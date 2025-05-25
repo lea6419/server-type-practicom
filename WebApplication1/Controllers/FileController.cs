@@ -256,6 +256,13 @@ namespace WebApplication1.Controllers
             _logger.LogInformation("File ID: {FileId} soft deleted successfully", fileId);
             return Ok(new { message = "File soft deleted successfully", file = deletedFile });
         }
+        [HttpPost("start-typing/{fileId}")]
+        public async Task<IActionResult> StartTyping(int fileId)
+        {
+            await _fileService.SetFileStatusAsync(fileId, FileStatus.InProgress);
+            return Ok();
+        }
+
         [HttpPost("upload-typist")]
         [Authorize]
         public async Task<IActionResult> UploadFileFromTypist([FromForm] TypistUploadDto uploadDto)

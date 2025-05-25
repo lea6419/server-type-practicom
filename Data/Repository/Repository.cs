@@ -21,6 +21,7 @@ public class Repository<T> : IRepository<T> where T : class, IEntity
     {
         await _dbSet.AddAsync(entity);
         await _context.SaveChangesAsync();
+     //   _logger.LogInformation("File will be saved with status: {Status}", userFile.Status);
         return entity;
     }
 
