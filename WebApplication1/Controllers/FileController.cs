@@ -155,7 +155,7 @@ namespace WebApplication1.Controllers
             try
             {
                 // קריאה לשירות הקבצים להורדת ה-URL
-                var downloadUrl = await _fileService.GetDownloadUrlAsyncType(fileId);
+                var downloadUrl = await _fileService.GetDownloadUrlAsync(fileId);
                 if (string.IsNullOrEmpty(downloadUrl))
                 {
                     _logger.LogWarning("Download URL not found for fileId: {FileId}", fileId);
@@ -260,6 +260,18 @@ namespace WebApplication1.Controllers
         public async Task<IActionResult> StartTyping(int fileId)
         {
             await _fileService.SetFileStatusAsync(fileId, FileStatus.InProgress);
+            return Ok();
+        }
+        [HttpPost("Completed/{fileId}")]
+        public async Task<IActionResult> Completed(int fileId)
+        {
+            await _fileService.SetFileStatusAsync(fileId, FileStatus.Completed);
+            return Ok();
+        }
+        [HttpPost("ReturnedToUser/{fileId}")]
+        public async Task<IActionResult> ReturnedToUser(int fileId)
+        {
+            await _fileService.SetFileStatusAsync(fileId, FileStatus.ReturnedToUser);
             return Ok();
         }
 
