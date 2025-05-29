@@ -155,7 +155,7 @@ namespace WebApplication1.Controllers
             try
             {
                 // קריאה לשירות הקבצים להורדת ה-URL
-                var downloadUrl = await _fileService.GetDownloadUrlAsync(fileId);
+                var downloadUrl = await _fileService.GetDownloadUrlAsync(fileId,true);
                 if (string.IsNullOrEmpty(downloadUrl))
                 {
                     _logger.LogWarning("Download URL not found for fileId: {FileId}", fileId);
