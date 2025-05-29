@@ -151,7 +151,11 @@ public class FileService : IFileService
             throw new ArgumentException(  "Original file not found" );
         }
         //  var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        var filePath = await _s3Service.UploadFileAsync(file, file.FileName+"type");
+        var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+        var extension = Path.GetExtension(file.FileName);
+        var typedFileName = $"{originalFileName}-typed{extension}";
+        var filePath = await _s3Service.UploadFileAsync(file, typedFileName);
+
 
         originalFile.TranscribedFileUrl = filePath;
         originalFile.Status = FileStatus.Completed;
