@@ -268,10 +268,14 @@ public class FileService : IFileService
     {
         var userFile = await _fileRepository.GetByIdAsync(fileId);
         if (userFile == null) throw new ArgumentException("File not found.");
-
+        var file= await _fileRepository.GetByIdAsync(fileId);
         if (isTranscribed && !string.IsNullOrEmpty(userFile.TranscribedFileUrl))
         {
-            return await _s3Service.GetDownloadUrlAsync(userFile.FileName + "-typed");
+            var originalFileName = Path.GetFileNameWithoutExtension(file.FileName);
+            var extension = Path.GetExtension(file.FileName);
+            var typedFileName = $"{originalFileName}-typed{extension}";
+            var filePath = _s3Service.GetDownloadUrlAsync(typedFileName);
+
         }
 
         if (!string.IsNullOrEmpty(userFile.OriginalFileUrl))
