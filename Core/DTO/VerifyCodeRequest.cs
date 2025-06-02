@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Core.DTO
 {
-    internal class VerifyCodeRequest
+    public class VerifyCodeRequest
     {
+        public string Email { get; set; }
+        public string Code { get; set; }
     }
 }

@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace Core.Models
 {
-    internal class VerificationCode
+    public class VerificationCode:IEntity
     {
+        public int Id { get; set; }
+        public string UserEmail { get; set; }
+        public string Code { get; set; }
+        public DateTime Expiration { get; set; }
     }
+
 }

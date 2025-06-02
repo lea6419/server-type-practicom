@@ -1,8 +1,6 @@
-﻿using Core.Models;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Service;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -11,54 +9,12 @@ public class AuthService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
-    private readonly EmailService _emailService;
 
-    public AuthService(IConfiguration configuration, ILogger<AuthService> logger,EmailService emailService)
+    public AuthService(IConfiguration configuration, ILogger<AuthService> logger)
     {
         _configuration = configuration;
         _logger = logger;
-        _emailService = emailService;
     }
-
-
-    public async Task<bool> SendVerificationCodeAsync(string userEmail)
-    {
-        try
-        {
-            var code = new Random().Next(100000, 999999).ToString();
-
-            // מחיקה של קוד קודם אם קיים
-            var existing = _context.VerificationCodes.FirstOrDefault(v => v.UserEmail == userEmail);
-            if (existing != null)
-            {
-                _context.VerificationCodes.Remove(existing);
-            }
-
-            var newCode = new VerificationCode
-            {
-                UserEmail = userEmail,
-                Code = code,
-                Expiration = DateTime.UtcNow.AddMinutes(10) // תקף ל-10 דקות
-            };
-
-            _context.VerificationCodes.Add(newCode);
-            await _context.SaveChangesAsync();
-
-            var subject = "קוד אימות למערכת";
-            var body = $"<p>קוד האימות שלך הוא: <strong>{code}</strong></p>";
-
-            await _emailService.SendEmailAsync(userEmail, subject, body);
-            _logger.LogInformation("Verification code sent and saved to DB for {Email}", userEmail);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send/save verification code to {Email}", userEmail);
-            return false;
-        }
-    }
-
 
     public int GetUserIdFromToken(string token)
     {
