@@ -2,12 +2,15 @@
 
 using Amazon.Auth.AccessControlPolicy;
 using Amazon.S3;
+using Core.Interface.Repositories;
 using Data;
+using Data.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Service;
 using Service.Services;
 using System.Text;
 
@@ -84,8 +87,8 @@ IServiceCollection serviceCollection = builder.Services.AddScoped<Is3Service, S3
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
 
-builder.Services.AddScoped<EmailService>();
-
+builder.Services.AddScoped<IVerificationCodeRepository, VerificationCodeRepository>();
+builder.Services.AddScoped<VerificationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IFileService, FileService>();
 

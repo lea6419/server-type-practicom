@@ -26,5 +26,6 @@ namespace Data
         public DbSet<Progress> Progresses { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<VerificationCode> VerificationCodes { get; set; }
     }
 }
