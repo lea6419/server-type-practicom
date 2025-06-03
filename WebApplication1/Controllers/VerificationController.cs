@@ -1,45 +1,40 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Service;
 
-namespace WebApplication1.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class VerificationController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class VerificationController : ControllerBase
+    private readonly VerificationService _verificationService;
+
+    public VerificationController(VerificationService verificationService)
     {
-        private readonly VerificationService _verificationService;
+        _verificationService = verificationService;
+    }
 
-        public VerificationController(VerificationService verificationService)
-        {
-            _verificationService = verificationService;
-        }
+    [HttpPost("send-code")]
+    public async Task<IActionResult> SendCode([FromQuery] string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { error = "Email is required." });
 
-        // שליחת קוד אימות למייל
-        [HttpPost("send-code")]
-        public async Task<IActionResult> SendCode([FromQuery] string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest("Email is required.");
+        var result = await _verificationService.SendVerificationCodeAsync(email);
+        if (result)
+            return Ok(new { message = "Verification code sent." });
 
-            var result = await _verificationService.SendVerificationCodeAsync(email);
-            if (result)
-                return Ok("Verification code sent.");
+        return StatusCode(500, new { error = "Failed to send verification code." });
+    }
 
-            return StatusCode(500, "Failed to send verification code.");
-        }
+    [HttpPost("verify-code")]
+    public async Task<IActionResult> VerifyCode([FromQuery] string email, [FromQuery] string code)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
+            return BadRequest(new { error = "Email and code are required." });
 
-        // בדיקת קוד אימות
-        [HttpPost("verify-code")]
-        public async Task<IActionResult> VerifyCode([FromQuery] string email, [FromQuery] string code)
-        {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code))
-                return BadRequest("Email and code are required.");
+        var verified = await _verificationService.VerifyCodeAsync(email, code);
+        if (verified)
+            return Ok(new { message = "Verification successful." });
 
-            var verified = await _verificationService.VerifyCodeAsync(email, code);
-            if (verified)
-                return Ok("Verification successful.");
-
-            return Unauthorized("Invalid or expired verification code.");
-        }
+        return Unauthorized(new { error = "Invalid or expired verification code." });
     }
 }
