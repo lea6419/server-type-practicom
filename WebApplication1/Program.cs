@@ -1,4 +1,7 @@
-﻿using Amazon.S3;
+﻿
+
+using Amazon.Auth.AccessControlPolicy;
+using Amazon.S3;
 using Core.Interface.Repositories;
 using Data;
 using Data.Repository;
@@ -12,8 +15,8 @@ using Service.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// 1. קריאת ההגדרות מתוך appsettings.json > EmailSettings
+//builder.WebHost.UseUrls("http://*:80");
+// קריאת ההגדרות מתוך appsettings.json > EmailSettings
 builder.Services.Configure<EmailSettings>(options =>
 {
     options.From = Environment.GetEnvironmentVariable("EMAIL_FROM");
@@ -22,15 +25,17 @@ builder.Services.Configure<EmailSettings>(options =>
     options.SmtpPort = int.Parse(Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587");
 });
 
-// 2. הגדרת Serilog (לוגים לקונסול ולקובץ)
 builder.Logging.AddConsole();
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console()
     .WriteTo.File("logs/myapp.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
-// 3. CORS - מדיניות שמאפשרת לכל מקור
+//builder.Host.UseSerilog();
+
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -39,7 +44,8 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader());
 });
 
-// 4. JWT Authentication
+
+// הוספת JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -55,54 +61,54 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
 });
 
-// 5. Authorization מבוסס תפקידים
+// הוספת הרשאות מבוססות-תפקידים
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("TypeistOnly", policy => policy.RequireRole("typist"));
     options.AddPolicy("ClientOrTypeist", policy => policy.RequireRole("user", "typist"));
-    options.AddPolicy("ClientOnly", policy => policy.RequireRole("user"));
+    options.AddPolicy("ClientOnly", policy => policy.RequireRole("user", "typist"));
+
+
 });
 
-// 6. DbContext (MySQL via Pomelo)
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-
-// 7. AWS S3 Service
 builder.Services.AddAWSService<IAmazonS3>();
-builder.Services.AddScoped<Is3Service, S3Service>();
-
-// 8. רישום מאגרי הנתונים (Repositories) ושירותי העסקי (Services)
+// רישום השירות של S3
+IServiceCollection serviceCollection = builder.Services.AddScoped<Is3Service, S3Service>();
+// Add services to the container.
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
-builder.Services.AddScoped<IVerificationCodeRepository, VerificationCodeRepository>();
-builder.Services.AddScoped<VerificationService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IFileService, FileService>();
 
-// **9. רישום EmailService עצמו** (הבעיה נפתרת כאן)
 builder.Services.AddScoped<EmailService>();
 
-// 10. רישום AuthService (אם יש בו תלות ב־EmailService או VerificationService)
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IVerificationCodeRepository, VerificationCodeRepository>();
+builder.Services.AddScoped<VerificationService>();
+
 builder.Services.AddScoped<AuthService>();
-
-// 11. רישום לוגר של UserService (אם משתמש בו)
 builder.Services.AddScoped<ILogger<UserService>, Logger<UserService>>();
-
-// 12. Controllers
 builder.Services.AddControllers();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
-// 13. Swagger
+
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
 
-    // תמיכה ב‑JWT ב‑Swagger
+    // ✅ הגדרת תמיכה ב-JWT ב-Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -111,6 +117,7 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer"
     });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -129,20 +136,25 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// 14. שימוש ב‑CORS middleware
+
+// שימוש ב-CORS middleware
 app.UseCors("AllowAll");
 
-// 15. Swagger middleware
-app.UseSwagger();
-app.UseSwaggerUI();
 
-// 16. HTTPS redirection, Authentication, Authorization, Static files
+//Configure the HTTP request pipeline.
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
+
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
-app.UseAuthorization();
-app.UseStaticFiles();
 
-// 17. MapControllers (כשורה אחת מספיק)
+app.UseAuthorization();
+app.UseStaticFiles(); // הפעלת הגשת קבצים סטטיים
+
+app.MapControllers();
+
 app.MapControllers();
 
 app.Run();
